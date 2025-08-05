@@ -1,20 +1,36 @@
+import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import 'react-native-gesture-handler';
+import { AppProvider } from './src/context/AppContext';
+import { AppNavigator } from './src/navigation/AppNavigator';
+import { NotificationService } from './src/services/notifications';
 
-export default function App() {
+function AppContent() {
+  useEffect(() => {
+    // Inicializar notificaciones al arrancar la app
+    const initializeNotifications = async () => {
+      try {
+        await NotificationService.initialize();
+      } catch (error) {
+        console.error('Error al inicializar notificaciones:', error);
+      }
+    };
+
+    initializeNotifications();
+  }, []);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
+    <>
+      <AppNavigator />
       <StatusBar style="auto" />
-    </View>
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  );
+}
