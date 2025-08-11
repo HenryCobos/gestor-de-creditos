@@ -1,0 +1,13 @@
+# Redirects para Netlify
+# Asegurar que app-ads.txt sea accesible
+/app-ads.txt  /app-ads.txt  200
+
+# Redirecciones para documentos legales
+/privacy      /POLITICA_PRIVACIDAD.md    200
+/terms        /TERMINOS_SERVICIO.md      200
+/support      /support.html              200
+
+# Headers para app-ads.txt
+/app-ads.txt
+  Content-Type: text/plain
+  Cache-Control: max-age=3600

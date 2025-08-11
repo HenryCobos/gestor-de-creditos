@@ -5,10 +5,19 @@ import { useApp } from '../../context/AppContext';
 import { Card, Button, Badge, LoadingSpinner, EmptyState } from '../../components';
 import { formatearFecha, formatearFechaTexto, getEstadoFecha } from '../../utils/dateUtils';
 import { addDays, parseISO, differenceInDays } from 'date-fns';
+import { BottomBannerAd, useInterstitialAds, AdMobDebug, AdPlaceholder } from '../../components/ads';
 
 export function HomeScreen() {
   const navigation = useNavigation();
   const { state } = useApp();
+  const { showOnNavigation } = useInterstitialAds();
+
+  // Función para navegar con intersticial
+  const navegarConIntersticial = async (pantalla: string) => {
+    // Mostrar intersticial antes de navegar (respeta políticas automáticamente)
+    await showOnNavigation();
+    (navigation as any).navigate(pantalla);
+  };
 
   // Estadísticas principales
   const estadisticasHome = useMemo(() => {
@@ -72,7 +81,7 @@ export function HomeScreen() {
       titulo: 'Nuevo Préstamo',
       icono: '💰',
       color: '#2196F3',
-      accion: () => (navigation as any).navigate('PrestamoForm'),
+              accion: () => navegarConIntersticial('PrestamoForm'),
     },
     {
       id: 'calendario',
@@ -278,7 +287,7 @@ export function HomeScreen() {
                   </View>
                   <View style={styles.cuotaEstado}>
                     <Badge 
-                      variant={diasRestantes === 0 ? 'error' : diasRestantes <= 2 ? 'warning' : 'info'}
+                      variant={diasRestantes === 0 ? 'danger' : diasRestantes <= 2 ? 'warning' : 'info'}
                       text={diasRestantes === 0 ? 'Hoy' : `${diasRestantes}d`}
                     />
                   </View>
@@ -360,7 +369,7 @@ export function HomeScreen() {
               </View>
               <Button
                 title="Crear"
-                onPress={() => (navigation as any).navigate('PrestamoForm')}
+                onPress={() => navegarConIntersticial('PrestamoForm')}
                 size="small"
                 variant="outline"
               />
@@ -368,6 +377,20 @@ export function HomeScreen() {
           )}
         </Card>
       )}
+
+      {/* Banner publicitario */}
+      <BottomBannerAd 
+        onReceiveAd={() => console.log('📺 Banner cargado en Home')}
+        onError={(error) => console.warn('⚠️ Error en banner Home:', error)}
+      />
+
+      {/* Componentes de Debug y Demostración */}
+      <AdMobDebug />
+      
+      <AdPlaceholder 
+        type="intersticial" 
+        onPress={() => navegarConIntersticial('PrestamoForm')}
+      />
 
       <View style={styles.bottomSpacing} />
     </ScrollView>

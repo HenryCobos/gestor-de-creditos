@@ -1,0 +1,23 @@
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/app-ads.txt"
+  [headers.values]
+    Content-Type = "text/plain"
+    Cache-Control = "max-age=3600"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "max-age=86400"
+
+[[redirects]]
+  from = "/privacy"
+  to = "/POLITICA_PRIVACIDAD.md"
+  status = 200
+
+[[redirects]]
+  from = "/terms"
+  to = "/TERMINOS_SERVICIO.md"
+  status = 200

@@ -48,9 +48,9 @@ export function Input({
 
   const textInputStyles = [
     styles.textInput,
-    leftIcon && styles.textInputWithLeftIcon,
-    rightIcon && styles.textInputWithRightIcon,
-    inputStyle,
+    ...(leftIcon ? [styles.textInputWithLeftIcon] : []),
+    ...(rightIcon ? [styles.textInputWithRightIcon] : []),
+    ...(inputStyle ? [inputStyle] : []),
   ];
 
   return (

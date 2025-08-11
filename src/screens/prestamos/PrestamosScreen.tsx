@@ -4,9 +4,11 @@ import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { Button, LoadingSpinner, EmptyState, Input, PrestamoCard } from '../../components';
+import { BottomBannerAd, useInterstitialAds } from '../../components/ads';
 
 export function PrestamosScreen() {
   const navigation = useNavigation(); // Cast to any for navigation calls
+  const { showOnNavigation } = useInterstitialAds();
   const { 
     state, 
     obtenerPrestamosFiltrados, 
@@ -42,7 +44,8 @@ export function PrestamosScreen() {
     (navigation as any).navigate('PrestamoForm', { prestamoId });
   };
 
-  const handleViewPrestamo = (prestamoId: string) => {
+  const handleViewPrestamo = async (prestamoId: string) => {
+    await showOnNavigation();
     (navigation as any).navigate('PrestamoDetalle', { prestamoId });
   };
 
@@ -168,6 +171,12 @@ export function PrestamosScreen() {
             onAction={handleCreatePrestamo}
           />
         }
+      />
+      
+      {/* Banner publicitario */}
+      <BottomBannerAd 
+        onReceiveAd={() => console.log('📺 Banner cargado en Préstamos')}
+        onError={(error) => console.warn('⚠️ Error en banner Préstamos:', error)}
       />
     </View>
   );

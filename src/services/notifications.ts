@@ -33,6 +33,8 @@ export interface NotificationConfig {
   frecuenciaResumen: 'diario' | 'semanal' | 'mensual' | 'nunca';
 }
 
+// ===== SERVICIO DE NOTIFICACIONES =====
+
 export class NotificationService {
   /**
    * Inicializa el servicio de notificaciones
@@ -53,8 +55,8 @@ export class NotificationService {
         return;
       }
 
-      // Configurar canal de notificación en Android
-      if (Platform.OS === 'android') {
+      // Configurar canal de notificación para iOS
+      if (Platform.OS === 'ios') {
         await Notifications.setNotificationChannelAsync('default', {
           name: 'default',
           importance: Notifications.AndroidImportance.MAX,

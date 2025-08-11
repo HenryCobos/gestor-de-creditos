@@ -69,8 +69,6 @@ export function PrestamoForm({
   submitText = 'Crear Préstamo',
   isLoading = false,
 }: PrestamoFormProps) {
-  const [mostrarSimulacion, setMostrarSimulacion] = useState(false);
-  const [simulacion, setSimulacion] = useState<any>(null);
 
   const formInitialValues = { 
     ...defaultValues, 
@@ -101,33 +99,7 @@ export function PrestamoForm({
     }
   };
 
-  const simularPrestamo = (values: PrestamoFormData) => {
-    try {
-      const validacion = CalculationService.validarDatosPrestamo(values);
-      if (!validacion.valido) {
-        Alert.alert(
-          'Datos inválidos',
-          'Completa todos los campos correctamente para simular.',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
 
-      const simulacionData = CalculationService.simularEscenarios(values);
-      setSimulacion(simulacionData);
-      setMostrarSimulacion(true);
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        'No se pudo simular el préstamo.',
-        [{ text: 'OK' }]
-      );
-    }
-  };
-
-  const formatearMoneda = (valor: number) => {
-    return `$${valor.toLocaleString('es-CO')}`;
-  };
 
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
@@ -184,7 +156,7 @@ export function PrestamoForm({
               label="Número de cuotas"
               value={values.numeroCuotas.toString()}
               onChangeText={(text) => {
-                const numericValue = parseInt(text.replace(/[^0-9]/g, '')) || 1;
+                const numericValue = parseInt(text.replace(/[^0-9]/g, '')) || 0;
                 setFieldValue('numeroCuotas', numericValue);
               }}
               onBlur={handleBlur('numeroCuotas')}
@@ -271,53 +243,7 @@ export function PrestamoForm({
               autoCapitalize="sentences"
             />
 
-            {/* Botón de simulación */}
-            <Button
-              title="Simular Préstamo"
-              onPress={() => simularPrestamo(values)}
-              variant="outline"
-              disabled={!isValid}
-              style={styles.simulateButton}
-            />
 
-            {/* Simulación */}
-            {mostrarSimulacion && simulacion && (
-              <Card style={styles.simulationCard}>
-                <Text style={styles.simulationTitle}>Simulación del Préstamo</Text>
-                
-                <View style={styles.simulationRow}>
-                  <Text style={styles.simulationLabel}>Interés Simple:</Text>
-                  <Text style={styles.simulationValue}>
-                    {formatearMoneda(simulacion.interesSimple.montoTotal)}
-                  </Text>
-                </View>
-                
-                <View style={styles.simulationRow}>
-                  <Text style={styles.simulationLabel}>Interés Compuesto:</Text>
-                  <Text style={styles.simulationValue}>
-                    {formatearMoneda(simulacion.interesCompuesto.montoTotal)}
-                  </Text>
-                </View>
-                
-                <View style={styles.simulationRow}>
-                  <Text style={styles.simulationLabel}>Cuota:</Text>
-                  <Text style={styles.simulationValue}>
-                    {formatearMoneda(simulacion[values.tipoInteres].montoCuota)}
-                  </Text>
-                </View>
-                
-                <View style={styles.simulationRow}>
-                  <Text style={styles.simulationLabel}>Total Intereses:</Text>
-                  <Text style={styles.simulationValue}>
-                    {formatearMoneda(simulacion[values.tipoInteres].montoInteres)}
-                  </Text>
-                </View>
-
-                <Text style={styles.recommendationText}>
-                  Recomendación: {simulacion.recomendacion === 'compuesto' ? 'Interés Compuesto' : 'Interés Simple'}
-                </Text>
-              </Card>
-            )}
 
             {/* Botones de acción */}
             <View style={styles.buttonContainer}>
@@ -362,46 +288,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  simulateButton: {
-    marginTop: 16,
-  },
 
-  simulationCard: {
-    marginTop: 16,
-    backgroundColor: '#E3F2FD',
-  },
-
-  simulationTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1976D2',
-    marginBottom: 12,
-  },
-
-  simulationRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-
-  simulationLabel: {
-    fontSize: 14,
-    color: '#333333',
-  },
-
-  simulationValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1976D2',
-  },
-
-  recommendationText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4CAF50',
-    marginTop: 8,
-    textAlign: 'center',
-  },
   
   buttonContainer: {
     marginTop: 24,

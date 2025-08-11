@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { useApp } from '../../context/AppContext';
 import { Card, Button, Badge, LoadingSpinner, EmptyState, OptionSelector } from '../../components';
+import { BottomBannerAd } from '../../components/ads';
 import { formatearFecha, formatearFechaTexto } from '../../utils/dateUtils';
 import { addMonths, subMonths, format, parseISO, startOfMonth, endOfMonth, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -444,6 +445,12 @@ export function ReportesScreen() {
         )}
       </Card>
 
+      {/* Banner publicitario */}
+      <BottomBannerAd 
+        onReceiveAd={() => console.log('📺 Banner cargado en Reportes')}
+        onError={(error) => console.warn('⚠️ Error en banner Reportes:', error)}
+      />
+      
       <View style={styles.bottomSpacing} />
     </ScrollView>
   );

@@ -4,9 +4,11 @@ import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { Button, LoadingSpinner, EmptyState, Input, ClienteCard } from '../../components';
+import { BottomBannerAd, useInterstitialAds } from '../../components/ads';
 
 export function ClientesScreen() {
   const navigation = useNavigation();
+  const { showOnNavigation } = useInterstitialAds();
   const { 
     state, 
     obtenerClientesFiltrados, 
@@ -48,7 +50,8 @@ export function ClientesScreen() {
     (navigation as any).navigate('ClienteForm', { clienteId });
   };
 
-  const handleViewCliente = (clienteId: string) => {
+  const handleViewCliente = async (clienteId: string) => {
+    await showOnNavigation();
     (navigation as any).navigate('ClienteDetalle', { clienteId });
   };
 
@@ -163,6 +166,12 @@ export function ClientesScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+      
+      {/* Banner publicitario */}
+      <BottomBannerAd 
+        onReceiveAd={() => console.log('📺 Banner cargado en Clientes')}
+        onError={(error) => console.warn('⚠️ Error en banner Clientes:', error)}
+      />
     </View>
   );
 }
