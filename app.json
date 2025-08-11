@@ -1,29 +1,59 @@
 {
   "expo": {
-    "name": "gestor-de-creditos",
+    "name": "Gestor de Créditos",
     "slug": "gestor-de-creditos",
     "version": "1.0.0",
     "orientation": "portrait",
+    "platforms": [
+      "ios"
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "description": "Aplicación completa para gestionar préstamos, clientes y cuotas. Ideal para prestamistas, microfinanzas y gestión de créditos personales.",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#2196F3"
     },
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.gestordecreditos.app",
+      "buildNumber": "2",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Esta app no requiere acceso a la cámara",
+        "NSPhotoLibraryUsageDescription": "Esta app no requiere acceso a la galería",
+        "NSLocationUsageDescription": "Esta app no requiere acceso a la ubicación",
+        "NSMicrophoneUsageDescription": "Esta app no requiere acceso al micrófono",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.gestordecreditos.app",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#2196F3"
       },
-      "edgeToEdgeEnabled": true
+      "permissions": []
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#2196F3",
+          "sounds": [
+            "./assets/notification-sound.wav"
+          ]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "fcc79bd1-8773-45fb-a4f3-844d1bdd2713"
+      }
+    },
+    "owner": "henryapper"
   }
 }
