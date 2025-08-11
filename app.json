@@ -18,7 +18,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.gestordecreditos.app",
-      "buildNumber": "3",
+      "buildNumber": "10",
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Esta app no requiere acceso a la cámara",
