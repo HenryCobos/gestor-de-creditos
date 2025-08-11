@@ -47,6 +47,12 @@
             "./assets/notification-sound.wav"
           ]
         }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "iosAppId": "ca-app-pub-4349408589058649~7588427896"
+        }
       ]
     ],
     "extra": {
