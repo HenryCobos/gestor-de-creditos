@@ -29,15 +29,6 @@
         "GADApplicationIdentifier": "ca-app-pub-4349408589058649~7588427896"
       }
     },
-    "android": {
-      "package": "com.gestordecreditos.app",
-      "versionCode": 100,
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2196F3"
-      },
-      "permissions": []
-    },
     "plugins": [
       [
         "expo-notifications",
