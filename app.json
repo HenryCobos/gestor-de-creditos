@@ -2,7 +2,7 @@
   "expo": {
     "name": "Gestor de Créditos",
     "slug": "gestor-de-creditos",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "platforms": [
       "ios"
