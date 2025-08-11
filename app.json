@@ -9,7 +9,7 @@
     ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "description": "Aplicación completa para gestionar préstamos, clientes y cuotas. Ideal para prestamistas, microfinanzas y gestión de créditos personales.",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -25,7 +25,8 @@
         "NSPhotoLibraryUsageDescription": "Esta app no requiere acceso a la galería",
         "NSLocationUsageDescription": "Esta app no requiere acceso a la ubicación",
         "NSMicrophoneUsageDescription": "Esta app no requiere acceso al micrófono",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "GADApplicationIdentifier": "ca-app-pub-4349408589058649~7588427896"
       }
     },
     "android": {
@@ -46,13 +47,6 @@
           "sounds": [
             "./assets/notification-sound.wav"
           ]
-        }
-      ],
-      [
-        "react-native-google-mobile-ads",
-        {
-          "iosAppId": "ca-app-pub-4349408589058649~7588427896",
-          "androidAppId": "ca-app-pub-4349408589058649~7588427896"
         }
       ]
     ],
