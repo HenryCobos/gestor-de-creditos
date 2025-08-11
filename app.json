@@ -18,7 +18,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.gestordecreditos.app",
-      "buildNumber": "1",
+      "buildNumber": "3",
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Esta app no requiere acceso a la cámara",
@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "com.gestordecreditos.app",
-      "versionCode": 1,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2196F3"
