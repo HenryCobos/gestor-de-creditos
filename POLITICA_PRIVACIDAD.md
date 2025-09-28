@@ -46,7 +46,18 @@
 ## 4. Suscripciones Premium
 
 ### 4.1 Información sobre Suscripciones
-Esta aplicación ofrece suscripciones premium a través de **RevenueCat** y **App Store**.
+Esta aplicación ofrece suscripciones premium a través de **RevenueCat** y **App Store**:
+
+**RevenueCat:**
+- **Propósito:** Procesar suscripciones premium
+- **Datos compartidos:** Identificador de usuario, estado de suscripción
+- **Política de privacidad:** https://www.revenuecat.com/privacy
+- **Ubicación:** Estados Unidos
+
+**Apple App Store:**
+- **Propósito:** Procesar pagos de suscripciones
+- **Datos compartidos:** Información de pago (manejada por Apple)
+- **Política de privacidad:** https://www.apple.com/privacy/
 
 **Información que recopilamos para suscripciones:**
 - Estado de suscripción (activa/inactiva)
