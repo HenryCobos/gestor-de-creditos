@@ -3,20 +3,73 @@ import { View, ScrollView, Text, StyleSheet, TouchableOpacity, FlatList } from '
 import { useNavigation } from '@react-navigation/native';
 import { useApp } from '../../context/AppContext';
 import { Card, Button, Badge, LoadingSpinner, EmptyState } from '../../components';
+import { SimplePaywall } from '../../components/paywall/SimplePaywall';
 import { formatearFecha, formatearFechaTexto, getEstadoFecha } from '../../utils/dateUtils';
 import { addDays, parseISO, differenceInDays } from 'date-fns';
-import { BottomBannerAd, useInterstitialAds, AdMobDebug, AdPlaceholder } from '../../components/ads';
+import { isFeatureAllowed } from '../../utils/featureGating';
+import { usePremium } from '../../hooks/usePremium';
+import { useContextualPaywall } from '../../hooks/useContextualPaywall';
+import { useConversionFlow } from '../../hooks/useConversionFlow';
+// Ads eliminados
 
 export function HomeScreen() {
   const navigation = useNavigation();
   const { state } = useApp();
-  const { showOnNavigation } = useInterstitialAds();
-
-  // Función para navegar con intersticial
-  const navegarConIntersticial = async (pantalla: string) => {
-    // Mostrar intersticial antes de navegar (respeta políticas automáticamente)
-    await showOnNavigation();
+  const premium = usePremium();
+  const contextualPaywall = useContextualPaywall();
+  const conversionFlow = useConversionFlow();
+  
+  // Navegación directa
+  const navegar = (pantalla: string) => {
     (navigation as any).navigate(pantalla);
+  };
+
+  // Función para crear cliente con validación de límites
+  const handleCreateCliente = () => {
+    // Verificar si debe mostrar paywall preventivo
+    if (conversionFlow.shouldShowPreventivePaywall()) {
+      conversionFlow.showPaywall('preventive');
+      contextualPaywall.showPaywall('create_cliente');
+      return;
+    }
+
+    const gate = isFeatureAllowed('create_cliente', {
+      clientesCount: state.clientes.length,
+      prestamosActivosCount: state.prestamos.filter(p => p.estado === 'activo').length,
+      isPremium: premium.isPremium,
+    });
+    
+    if (!gate.allowed) {
+      conversionFlow.showPaywall('blocking');
+      contextualPaywall.showPaywall('create_cliente');
+      return;
+    }
+    
+    (navigation as any).navigate('ClienteForm');
+  };
+
+  // Función para crear préstamo con validación de límites
+  const handleCreatePrestamo = () => {
+    // Verificar si debe mostrar paywall preventivo
+    if (conversionFlow.shouldShowPreventivePaywall()) {
+      conversionFlow.showPaywall('preventive');
+      contextualPaywall.showPaywall('create_prestamo');
+      return;
+    }
+
+    const gate = isFeatureAllowed('create_prestamo', {
+      clientesCount: state.clientes.length,
+      prestamosActivosCount: state.prestamos.filter(p => p.estado === 'activo').length,
+      isPremium: premium.isPremium,
+    });
+    
+    if (!gate.allowed) {
+      conversionFlow.showPaywall('blocking');
+      contextualPaywall.showPaywall('create_prestamo');
+      return;
+    }
+    
+    navegar('PrestamoForm');
   };
 
   // Estadísticas principales
@@ -74,14 +127,14 @@ export function HomeScreen() {
       titulo: 'Nuevo Cliente',
       icono: '👤',
       color: '#4CAF50',
-      accion: () => (navigation as any).navigate('ClienteForm'),
+      accion: handleCreateCliente,
     },
     {
       id: 'nuevo-prestamo',
       titulo: 'Nuevo Préstamo',
       icono: '💰',
       color: '#2196F3',
-              accion: () => navegarConIntersticial('PrestamoForm'),
+      accion: handleCreatePrestamo,
     },
     {
       id: 'calendario',
@@ -123,12 +176,21 @@ export function HomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
+      <ScrollView>
       {/* Saludo y Estado General */}
       <Card style={styles.card}>
-        <View style={styles.greetingContainer}>
-          <Text style={styles.greeting}>{obtenerSaludo()}</Text>
-          <Text style={styles.appName}>Gestor de Créditos</Text>
+        <View style={styles.headerContainer}>
+          <View style={styles.greetingContainer}>
+            <Text style={styles.greeting}>{obtenerSaludo()}</Text>
+            <Text style={styles.appName}>Gestor de Créditos</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.settingsButton}
+            onPress={() => navegar('Configuracion')}
+          >
+            <Text style={styles.settingsIcon}>⚙️</Text>
+          </TouchableOpacity>
         </View>
         
         <View style={styles.quickStats}>
@@ -351,7 +413,7 @@ export function HomeScreen() {
               </View>
               <Button
                 title="Crear"
-                onPress={() => (navigation as any).navigate('ClienteForm')}
+                onPress={handleCreateCliente}
                 size="small"
                 variant="outline"
               />
@@ -369,7 +431,7 @@ export function HomeScreen() {
               </View>
               <Button
                 title="Crear"
-                onPress={() => navegarConIntersticial('PrestamoForm')}
+                onPress={handleCreatePrestamo}
                 size="small"
                 variant="outline"
               />
@@ -378,22 +440,24 @@ export function HomeScreen() {
         </Card>
       )}
 
-      {/* Banner publicitario */}
-      <BottomBannerAd 
-        onReceiveAd={() => console.log('📺 Banner cargado en Home')}
-        onError={(error) => console.warn('⚠️ Error en banner Home:', error)}
-      />
-
-      {/* Componentes de Debug y Demostración */}
-      <AdMobDebug />
-      
-      <AdPlaceholder 
-        type="intersticial" 
-        onPress={() => navegarConIntersticial('PrestamoForm')}
-      />
+      {/* Monetización por suscripción: pendiente integrar paywall */}
 
       <View style={styles.bottomSpacing} />
-    </ScrollView>
+      </ScrollView>
+      
+      {/* Paywall Simple */}
+      <SimplePaywall
+        visible={contextualPaywall.visible}
+        onClose={contextualPaywall.hidePaywall}
+        onSelect={contextualPaywall.handleSubscribe}
+        onStartTrial={contextualPaywall.handleStartTrial}
+        context={{
+          currentUsage: contextualPaywall.context?.currentUsage || state.clientes.length,
+          limit: contextualPaywall.context?.limit || 10,
+          featureName: contextualPaywall.context?.featureName || 'Clientes',
+        }}
+      />
+    </View>
   );
 }
 
@@ -406,8 +470,23 @@ const styles = StyleSheet.create({
     margin: 16,
     marginBottom: 0,
   },
-  greetingContainer: {
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 20,
+  },
+  greetingContainer: {
+    flex: 1,
+  },
+  settingsButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    marginLeft: 10,
+  },
+  settingsIcon: {
+    fontSize: 20,
   },
   greeting: {
     fontSize: 24,

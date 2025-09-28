@@ -3,12 +3,19 @@ import { View, FlatList, StyleSheet, Alert, RefreshControl } from 'react-native'
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { Button, LoadingSpinner, EmptyState, Input, PrestamoCard } from '../../components';
-import { BottomBannerAd, useInterstitialAds } from '../../components/ads';
+import { Button, LoadingSpinner, EmptyState, Input, PrestamoCard, LimitIndicator, PremiumBadge } from '../../components';
+import { SimplePaywall } from '../../components/paywall/SimplePaywall';
+// Ads eliminados
+import { usePremium } from '../../hooks/usePremium';
+import { useContextualPaywall } from '../../hooks/useContextualPaywall';
+import { useConversionFlow } from '../../hooks/useConversionFlow';
+import { isFeatureAllowed } from '../../utils/featureGating';
 
 export function PrestamosScreen() {
   const navigation = useNavigation(); // Cast to any for navigation calls
-  const { showOnNavigation } = useInterstitialAds();
+  const premium = usePremium();
+  const contextualPaywall = useContextualPaywall();
+  const conversionFlow = useConversionFlow();
   const { 
     state, 
     obtenerPrestamosFiltrados, 
@@ -37,6 +44,23 @@ export function PrestamosScreen() {
   const prestamosFiltrados = obtenerPrestamosFiltrados();
 
   const handleCreatePrestamo = () => {
+    // Verificar si debe mostrar paywall preventivo
+    if (conversionFlow.shouldShowPreventivePaywall()) {
+      conversionFlow.showPaywall('preventive');
+      contextualPaywall.showPaywall('create_prestamo');
+      return;
+    }
+
+    const gate = isFeatureAllowed('create_prestamo', {
+      clientesCount: state.clientes.length,
+      prestamosActivosCount: state.prestamos.filter(p => p.estado === 'activo').length,
+      isPremium: premium.isPremium,
+    });
+    if (!gate.allowed) {
+      conversionFlow.showPaywall('blocking');
+      contextualPaywall.showPaywall('create_prestamo');
+      return;
+    }
     (navigation as any).navigate('PrestamoForm');
   };
 
@@ -45,7 +69,6 @@ export function PrestamosScreen() {
   };
 
   const handleViewPrestamo = async (prestamoId: string) => {
-    await showOnNavigation();
     (navigation as any).navigate('PrestamoDetalle', { prestamoId });
   };
 
@@ -113,6 +136,17 @@ export function PrestamosScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Indicador de límites para usuarios no premium */}
+      {!premium.isPremium && (
+        <LimitIndicator
+          current={state.prestamos.filter(p => p.estado === 'activo').length}
+          limit={10}
+          label="Préstamos Activos"
+          icon="💰"
+          onUpgrade={() => contextualPaywall.showPaywall('create_prestamo')}
+        />
+      )}
+
       <View style={styles.header}>
         <View style={styles.searchContainer}>
           <Input
@@ -121,6 +155,13 @@ export function PrestamosScreen() {
             onChangeText={setSearchText}
           />
         </View>
+        <Button
+          title="⚙️"
+          onPress={() => (navigation as any).navigate('Configuracion')}
+          size="small"
+          variant="outline"
+          style={styles.settingsButton}
+        />
         <Button
           title="Nuevo Préstamo"
           onPress={handleCreatePrestamo}
@@ -173,11 +214,20 @@ export function PrestamosScreen() {
         }
       />
       
-      {/* Banner publicitario */}
-      <BottomBannerAd 
-        onReceiveAd={() => console.log('📺 Banner cargado en Préstamos')}
-        onError={(error) => console.warn('⚠️ Error en banner Préstamos:', error)}
+      {/* Paywall Simple */}
+      <SimplePaywall
+        visible={contextualPaywall.visible}
+        onClose={contextualPaywall.hidePaywall}
+        onSelect={contextualPaywall.handleSubscribe}
+        onStartTrial={contextualPaywall.handleStartTrial}
+        context={{
+          currentUsage: contextualPaywall.context?.currentUsage || state.prestamos.filter(p => p.estado === 'activo').length,
+          limit: contextualPaywall.context?.limit || 10,
+          featureName: contextualPaywall.context?.featureName || 'Préstamos Activos',
+        }}
       />
+      
+      {/* Espacio inferior para safe area */}
     </View>
   );
 }
@@ -197,6 +247,10 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     flex: 1,
+  },
+  settingsButton: {
+    minWidth: 40,
+    paddingHorizontal: 12,
   },
   createButton: {
     paddingHorizontal: 16,

@@ -1,11 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { useApp } from '../../context/AppContext';
-import { Card, Button, Badge, LoadingSpinner, EmptyState, OptionSelector } from '../../components';
-import { BottomBannerAd } from '../../components/ads';
+import { Card, Button, Badge, LoadingSpinner, EmptyState, OptionSelector, PremiumBadge, ExportModal } from '../../components';
+import { ContextualPaywall } from '../../components/paywall/ContextualPaywall';
+import { usePremium } from '../../hooks/usePremium';
+import { useContextualPaywall } from '../../hooks/useContextualPaywall';
+import { isFeatureAllowed } from '../../utils/featureGating';
+import { useNavigation } from '@react-navigation/native';
+// Ads eliminados
 import { formatearFecha, formatearFechaTexto } from '../../utils/dateUtils';
 import { addMonths, subMonths, format, parseISO, startOfMonth, endOfMonth, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ReportData } from '../../services/exportService';
 
 type PeriodoReporte = 'hoy' | 'semana' | 'mes' | 'trimestre' | 'año' | 'personalizado';
 
@@ -42,9 +48,13 @@ interface EstadisticasGenerales {
 
 export function ReportesScreen() {
   const { state } = useApp();
+  const premium = usePremium();
+  const contextualPaywall = useContextualPaywall();
+  const navigation = useNavigation();
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState<PeriodoReporte>('mes');
   const [fechaInicio, setFechaInicio] = useState(startOfMonth(new Date()));
   const [fechaFin, setFechaFin] = useState(endOfMonth(new Date()));
+  const [exportModalVisible, setExportModalVisible] = useState(false);
 
   // Filtrar datos por período
   const datosFiltrados = useMemo(() => {
@@ -216,20 +226,119 @@ export function ReportesScreen() {
     return <LoadingSpinner text="Generando reportes..." />;
   }
 
+  const gate = isFeatureAllowed('reportes_avanzados', {
+    clientesCount: state.clientes.length,
+    prestamosActivosCount: state.prestamos.filter(p => p.estado === 'activo').length,
+    isPremium: premium.isPremium,
+  });
+
+  const handleUpgradeReports = () => {
+    contextualPaywall.showPaywall('reportes_avanzados');
+  };
+
+  const generateReportData = (): ReportData => {
+    const prestamos = datosFiltrados.prestamos;
+    const cuotas = datosFiltrados.cuotas;
+    const pagos = datosFiltrados.pagos;
+    
+    // Calcular métricas por cliente
+    const clientesData = state.clientes.map(cliente => {
+      const prestamosCliente = prestamos.filter(p => p.clienteId === cliente.id);
+      const capitalPrestado = prestamosCliente.reduce((sum, p) => sum + p.montoTotal, 0);
+      const capitalRecuperado = pagos
+        .filter(p => prestamosCliente.some(pr => pr.id === p.prestamoId))
+        .reduce((sum, p) => sum + p.monto, 0);
+      
+      return {
+        id: cliente.id,
+        nombre: cliente.nombre,
+        telefono: cliente.telefono || 'N/A',
+        totalPrestamos: prestamosCliente.length,
+        capitalPrestado,
+        capitalRecuperado,
+        montoPendiente: capitalPrestado - capitalRecuperado,
+      };
+    });
+
+    // Calcular métricas por préstamo
+    const prestamosData = prestamos.map(prestamo => {
+      const cliente = state.clientes.find(c => c.id === prestamo.clienteId);
+      const cuotasPrestamo = cuotas.filter(c => c.prestamoId === prestamo.id);
+      
+      return {
+        id: prestamo.id,
+        clienteNombre: cliente?.nombre || 'Cliente no encontrado',
+        monto: prestamo.montoTotal,
+        fechaPrestamo: prestamo.fechaPrestamo,
+        estado: prestamo.estado,
+        cuotasPagadas: cuotasPrestamo.filter(c => c.estado === 'pagada').length,
+        cuotasTotal: prestamo.numeroCuotas,
+      };
+    });
+
+    return {
+      // Estadísticas generales
+      totalClientes: state.clientes.length,
+      totalPrestamos: prestamos.length,
+      capitalPrestado: estadisticas.capitalPrestado,
+      capitalRecuperado: estadisticas.capitalRecuperado,
+      interesesGenerados: estadisticas.interesesGenerados,
+      montoPendiente: estadisticas.montoPendiente,
+      montoVencido: estadisticas.montoVencido,
+      
+      // Indicadores
+      tasaRecuperacion: estadisticas.tasaRecuperacion,
+      margenGanancia: estadisticas.margenGanancia,
+      promedioInteres: estadisticas.promedioInteres,
+      
+      // Detalles
+      clientes: clientesData,
+      prestamos: prestamosData,
+      
+      // Período
+      periodo: {
+        inicio: format(fechaInicio, 'yyyy-MM-dd'),
+        fin: format(fechaFin, 'yyyy-MM-dd'),
+        tipo: periodoSeleccionado,
+      },
+    };
+  };
+
   return (
     <ScrollView style={styles.container}>
+      {/* Header con información del plan */}
+      <Card style={styles.card}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.sectionTitle}>
+            {gate.allowed ? '📊 Reportes Avanzados' : '📊 Reportes Básicos'}
+          </Text>
+          {!gate.allowed && (
+            <PremiumBadge>Básico</PremiumBadge>
+          )}
+        </View>
+        <Text style={styles.headerDescription}>
+          {gate.allowed 
+            ? 'Acceso completo a todos los reportes, gráficos y exportación'
+            : 'Vista limitada de reportes básicos. Mejora a Premium para acceso completo.'
+          }
+        </Text>
+      </Card>
       {/* Selector de Período */}
       <Card style={styles.card}>
         <Text style={styles.sectionTitle}>📊 Período de Análisis</Text>
         
         <OptionSelector
           variant="buttons"
-          options={[
+          options={gate.allowed ? [
             { key: 'hoy', label: 'Hoy', icon: '📅' },
             { key: 'semana', label: 'Semana', icon: '📋' },
             { key: 'mes', label: 'Mes', icon: '🗓️' },
             { key: 'trimestre', label: 'Trimestre', icon: '📆' },
             { key: 'año', label: 'Año', icon: '📊' }
+          ] : [
+            { key: 'hoy', label: 'Hoy', icon: '📅' },
+            { key: 'semana', label: 'Semana', icon: '📋' },
+            { key: 'mes', label: 'Mes', icon: '🗓️' }
           ]}
           selectedKey={periodoSeleccionado}
           onSelect={(key) => handleCambioPeriodo(key as PeriodoReporte)}
@@ -239,11 +348,28 @@ export function ReportesScreen() {
         <Text style={styles.periodRange}>
           {formatearFechaTexto(fechaInicio)} - {formatearFechaTexto(fechaFin)}
         </Text>
+        
+        {!gate.allowed && (
+          <View style={styles.upgradePrompt}>
+            <Text style={styles.upgradeText}>
+              🔒 Los períodos de trimestre y año son exclusivos de Premium
+            </Text>
+            <Button 
+              title="Mejorar a Premium" 
+              onPress={handleUpgradeReports}
+              size="small"
+              style={styles.upgradeButton}
+            />
+          </View>
+        )}
       </Card>
 
       {/* Métricas Principales */}
       <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>💰 Resumen Financiero</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>💰 Resumen Financiero</Text>
+          {!gate.allowed && <PremiumBadge>Básico</PremiumBadge>}
+        </View>
         
         <View style={styles.metricsGrid}>
           <View style={styles.metricItem}>
@@ -258,22 +384,40 @@ export function ReportesScreen() {
             <Text style={styles.metricLabel}>Recuperado</Text>
           </View>
           
-          <View style={styles.metricItem}>
-            <Text style={[styles.metricValue, styles.primaryText]}>
-              {formatearMoneda(estadisticas.interesesGenerados)}
-            </Text>
-            <Text style={styles.metricLabel}>Intereses</Text>
-          </View>
-          
-          <View style={styles.metricItem}>
-            <Text style={[styles.metricValue, styles.warningText]}>
-              {formatearMoneda(estadisticas.montoPendiente)}
-            </Text>
-            <Text style={styles.metricLabel}>Pendiente</Text>
-          </View>
+          {gate.allowed && (
+            <>
+              <View style={styles.metricItem}>
+                <Text style={[styles.metricValue, styles.primaryText]}>
+                  {formatearMoneda(estadisticas.interesesGenerados)}
+                </Text>
+                <Text style={styles.metricLabel}>Intereses</Text>
+              </View>
+              
+              <View style={styles.metricItem}>
+                <Text style={[styles.metricValue, styles.warningText]}>
+                  {formatearMoneda(estadisticas.montoPendiente)}
+                </Text>
+                <Text style={styles.metricLabel}>Pendiente</Text>
+              </View>
+            </>
+          )}
         </View>
 
-        {estadisticas.montoVencido > 0 && (
+        {!gate.allowed && (
+          <View style={styles.upgradePrompt}>
+            <Text style={styles.upgradeText}>
+              🔒 Los detalles de intereses y montos pendientes son exclusivos de Premium
+            </Text>
+            <Button 
+              title="Ver Detalles Completos" 
+              onPress={handleUpgradeReports}
+              size="small"
+              style={styles.upgradeButton}
+            />
+          </View>
+        )}
+
+        {gate.allowed && estadisticas.montoVencido > 0 && (
           <View style={styles.alertBox}>
             <Text style={styles.alertTitle}>⚠️ Atención</Text>
             <Text style={styles.alertText}>
@@ -285,7 +429,10 @@ export function ReportesScreen() {
 
       {/* Indicadores de Rendimiento */}
       <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>📈 Indicadores Clave</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>📈 Indicadores Clave</Text>
+          {!gate.allowed && <PremiumBadge>Básico</PremiumBadge>}
+        </View>
         
         <View style={styles.kpiGrid}>
           <View style={styles.kpiItem}>
@@ -309,26 +456,44 @@ export function ReportesScreen() {
             </View>
           </View>
           
-          <View style={styles.kpiItem}>
-            <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>Margen de Ganancia</Text>
-              <Badge variant="info" text={formatearPorcentaje(estadisticas.margenGanancia)} />
-            </View>
-            <Text style={styles.kpiDescription}>
-              Sobre capital prestado: {formatearMoneda(estadisticas.capitalPrestado)}
-            </Text>
-          </View>
-          
-          <View style={styles.kpiItem}>
-            <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>Interés Promedio</Text>
-              <Badge variant="default" text={formatearPorcentaje(estadisticas.promedioInteres)} />
-            </View>
-            <Text style={styles.kpiDescription}>
-              Promedio de {estadisticas.totalPrestamos} préstamos
-            </Text>
-          </View>
+          {gate.allowed && (
+            <>
+              <View style={styles.kpiItem}>
+                <View style={styles.kpiHeader}>
+                  <Text style={styles.kpiLabel}>Margen de Ganancia</Text>
+                  <Badge variant="info" text={formatearPorcentaje(estadisticas.margenGanancia)} />
+                </View>
+                <Text style={styles.kpiDescription}>
+                  Sobre capital prestado: {formatearMoneda(estadisticas.capitalPrestado)}
+                </Text>
+              </View>
+              
+              <View style={styles.kpiItem}>
+                <View style={styles.kpiHeader}>
+                  <Text style={styles.kpiLabel}>Interés Promedio</Text>
+                  <Badge variant="default" text={formatearPorcentaje(estadisticas.promedioInteres)} />
+                </View>
+                <Text style={styles.kpiDescription}>
+                  Promedio de {estadisticas.totalPrestamos} préstamos
+                </Text>
+              </View>
+            </>
+          )}
         </View>
+        
+        {!gate.allowed && (
+          <View style={styles.upgradePrompt}>
+            <Text style={styles.upgradeText}>
+              🔒 Los análisis de margen de ganancia e interés promedio son exclusivos de Premium
+            </Text>
+            <Button 
+              title="Ver Análisis Completo" 
+              onPress={handleUpgradeReports}
+              size="small"
+              style={styles.upgradeButton}
+            />
+          </View>
+        )}
       </Card>
 
       {/* Estadísticas por Categoría */}
@@ -445,13 +610,68 @@ export function ReportesScreen() {
         )}
       </Card>
 
-      {/* Banner publicitario */}
-      <BottomBannerAd 
-        onReceiveAd={() => console.log('📺 Banner cargado en Reportes')}
-        onError={(error) => console.warn('⚠️ Error en banner Reportes:', error)}
-      />
-      
+      {/* Sección de Exportación - Solo Premium */}
+      {gate.allowed ? (
+        <Card style={styles.card}>
+          <Text style={styles.sectionTitle}>📤 Exportar Reportes</Text>
+          <Text style={styles.exportDescription}>
+            Exporta tus reportes en PDF para análisis externo
+          </Text>
+          
+                  <Button 
+                    title="📊 Exportar PDF" 
+                    onPress={() => setExportModalVisible(true)}
+                    style={styles.exportButton}
+                  />
+        </Card>
+      ) : (
+        <Card style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>📤 Exportar Reportes</Text>
+            <PremiumBadge>Premium</PremiumBadge>
+          </View>
+                  <Text style={styles.exportDescription}>
+                    Exporta tus reportes en PDF para análisis detallado
+                  </Text>
+          
+          <View style={styles.upgradePrompt}>
+            <Text style={styles.upgradeText}>
+              🔒 La exportación de reportes es exclusiva de Premium
+            </Text>
+            <Button 
+              title="Activar Exportación" 
+              onPress={handleUpgradeReports}
+              style={styles.upgradeButton}
+            />
+          </View>
+        </Card>
+      )}
+
       <View style={styles.bottomSpacing} />
+      
+      {/* Paywall Contextual */}
+      <ContextualPaywall
+        visible={contextualPaywall.visible}
+        onClose={contextualPaywall.hidePaywall}
+        packages={contextualPaywall.packages}
+        loading={contextualPaywall.loading}
+        onSelect={contextualPaywall.handleSubscribe}
+        onRestore={contextualPaywall.handleRestore}
+        onStartTrial={contextualPaywall.handleStartTrial}
+        context={contextualPaywall.context || {
+          title: '',
+          message: '',
+          icon: '',
+          featureName: '',
+        }}
+      />
+
+      {/* Modal de Exportación */}
+      <ExportModal
+        visible={exportModalVisible}
+        onClose={() => setExportModalVisible(false)}
+        reportData={generateReportData()}
+      />
     </ScrollView>
   );
 }
@@ -663,5 +883,52 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 32,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  headerDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  upgradePrompt: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+  },
+  upgradeText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  upgradeButton: {
+    alignSelf: 'flex-start',
+  },
+  exportDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  exportButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  exportButton: {
+    flex: 1,
   },
 });

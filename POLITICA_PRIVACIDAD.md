@@ -1,133 +1,177 @@
 # Política de Privacidad - Gestor de Créditos
 
-**Última actualización:** 4 de agosto de 2025
+**Última actualización:** 28 de septiembre de 2024
 
 ## 1. Información General
 
-**Gestor de Créditos** ("nosotros", "nuestra", "la aplicación") es una aplicación móvil desarrollada para dispositivos iOS que permite gestionar préstamos, clientes y cuotas. Esta política de privacidad describe cómo recopilamos, usamos y protegemos su información personal.
+**Gestor de Créditos** ("nosotros", "la aplicación") es una aplicación móvil desarrollada por **Apper2025** para dispositivos iOS. Esta Política de Privacidad describe cómo recopilamos, usamos y protegemos su información cuando utiliza nuestra aplicación.
+
+**Información de contacto:**
+- Email: Apper2025@icloud.com
+- País: Perú
+- Aplicación: Gestor de Créditos (iOS)
 
 ## 2. Información que Recopilamos
 
 ### 2.1 Información que Usted Proporciona
-- **Datos de clientes**: Nombres, números de teléfono, direcciones
-- **Información financiera**: Montos de préstamos, cuotas, fechas de vencimiento
-- **Datos de contacto**: Información para comunicación con clientes
+- **Datos de clientes:** Nombres, teléfonos, direcciones y emails de sus clientes
+- **Información financiera:** Montos de préstamos, tasas de interés, cronogramas de pago
+- **Notas y comentarios:** Información adicional que usted ingrese voluntariamente
 
 ### 2.2 Información Recopilada Automáticamente
-- **Datos de uso**: Cómo utiliza la aplicación
-- **Información del dispositivo**: Tipo de dispositivo, sistema operativo
-- **Datos de rendimiento**: Tiempo de carga, errores técnicos
+- **Datos de uso de la aplicación:** Frecuencia de uso, funciones utilizadas (anónimos)
+- **Información del dispositivo:** Modelo del dispositivo, versión del sistema operativo (anónimos)
+- **Datos de suscripción:** Información de compras y suscripciones premium
 
-### 2.3 Información de Anuncios (AdMob)
-- **Identificadores de dispositivo**: Para mostrar anuncios personalizados
-- **Datos de interacción con anuncios**: Clics, visualizaciones
-- **Información de ubicación**: Para anuncios geográficamente relevantes
+### 2.3 Información que NO Recopilamos
+- No accedemos a su cámara, micrófono o ubicación
+- No recopilamos información de otras aplicaciones
+- No accedemos a su galería de fotos
+- No mostramos publicidad ni recopilamos datos para publicidad
+- No utilizamos servicios de publicidad como AdMob o Google Ads
 
 ## 3. Cómo Usamos su Información
 
-### 3.1 Funcionalidades de la Aplicación
-- Gestionar su cartera de clientes y préstamos
-- Calcular cuotas y fechas de vencimiento
-- Enviar notificaciones de recordatorio
-- Generar reportes y estadísticas
+### 3.1 Uso Principal
+- **Funcionalidad de la app:** Gestionar sus préstamos, clientes y pagos
+- **Almacenamiento local:** Todos sus datos se guardan únicamente en su dispositivo
+- **Cálculos financieros:** Procesar cronogramas de pago e intereses
+- **Notificaciones:** Recordatorios de pagos (solo si usted los habilita)
 
-### 3.2 Anuncios y Monetización
-- Mostrar anuncios relevantes a través de Google AdMob
-- Personalizar anuncios basados en su uso de la aplicación
-- Medir la efectividad de los anuncios
+### 3.2 Uso Secundario
+- **Mejora del servicio:** Análisis anónimo de uso para mejorar la aplicación
+- **Soporte técnico:** Resolver problemas reportados por usuarios
+- **Sin publicidad:** No utilizamos sus datos para mostrar anuncios
 
-### 3.3 Mejoras del Servicio
-- Analizar patrones de uso para mejorar la aplicación
-- Detectar y resolver errores técnicos
-- Desarrollar nuevas funcionalidades
+## 4. Suscripciones Premium
 
-## 4. Compartir Información
+### 4.1 Información sobre Suscripciones
+Esta aplicación ofrece suscripciones premium a través de **RevenueCat** y **App Store**.
 
-### 4.1 No Vendemos su Información
-**No vendemos, alquilamos o compartimos su información personal con terceros con fines comerciales.**
+**Información que recopilamos para suscripciones:**
+- Estado de suscripción (activa/inactiva)
+- Fecha de compra y renovación
+- Identificador de transacción
+- Tipo de suscripción (mensual/anual)
 
-### 4.2 Proveedores de Servicios
-Podemos compartir información con:
-- **Google AdMob**: Para mostrar anuncios
-- **Proveedores de análisis**: Para mejorar la aplicación
-- **Servicios de almacenamiento**: Para respaldar sus datos
+### 4.2 Propósito de los Datos de Suscripción
+- Proporcionar acceso a funciones premium
+- Gestionar renovaciones automáticas
+- Proporcionar soporte técnico
+- Mejorar la experiencia del usuario
 
-### 4.3 Requisitos Legales
-Podemos divulgar información si es requerido por ley o para proteger nuestros derechos.
+### 4.3 Control de Suscripciones
+Puede gestionar sus suscripciones:
+- **iOS:** Configuración > [Su nombre] > Suscripciones
+- **Política de App Store:** https://www.apple.com/privacy/
 
-## 5. Almacenamiento de Datos
+## 5. Almacenamiento y Seguridad
 
 ### 5.1 Almacenamiento Local
-- Sus datos se almacenan localmente en su dispositivo
-- Usted tiene control total sobre sus datos
-- Los datos no se sincronizan con servidores externos
+- **Todos sus datos financieros y de clientes se almacenan únicamente en su dispositivo**
+- **No enviamos datos a servidores externos** (excepto información de suscripción necesaria)
+- **Usted mantiene control total** sobre sus datos
 
 ### 5.2 Seguridad
-- Implementamos medidas de seguridad técnicas
-- Sus datos están protegidos con encriptación
-- Acceso limitado solo a usted
+- Los datos se almacenan usando las medidas de seguridad estándar de iOS
+- La aplicación no transmite datos sensibles a través de internet
+- Recomendamos mantener su dispositivo protegido con código/Touch ID/Face ID
 
-## 6. Sus Derechos
+### 5.3 Respaldo de Datos
+- La aplicación incluye funcionalidad de respaldo local
+- **Usted es responsable de crear respaldos** de sus datos importantes
+- Los respaldos se almacenan localmente en su dispositivo
 
-### 6.1 Acceso y Control
-- **Acceso**: Puede ver todos sus datos en la aplicación
-- **Modificación**: Puede editar o eliminar datos en cualquier momento
-- **Exportación**: Puede exportar sus datos desde la aplicación
-- **Eliminación**: Puede eliminar todos sus datos desinstalando la app
+## 6. Compartir Información
 
-### 6.2 Anuncios Personalizados
-- Puede optar por no recibir anuncios personalizados
-- Puede desactivar el seguimiento de anuncios en su dispositivo
-- Los anuncios seguirán mostrándose, pero serán menos relevantes
+### 6.1 No Compartimos Datos Personales
+- **No vendemos, alquilamos o compartimos** su información personal
+- **No tenemos acceso** a sus datos de clientes o préstamos
+- Sus datos permanecen privados en su dispositivo
 
-## 7. Anuncios y AdMob
+### 6.2 Excepciones Legales
+Solo compartiremos información si es requerido por:
+- Orden judicial válida
+- Proceso legal obligatorio
+- Protección de derechos legales
 
-### 7.1 Google AdMob
-Utilizamos Google AdMob para mostrar anuncios. AdMob puede recopilar:
-- Identificadores de dispositivo
-- Información de uso de la aplicación
-- Datos de interacción con anuncios
+## 7. Derechos del Usuario
 
-### 7.2 Control de Anuncios
-- Puede desactivar anuncios personalizados en configuración
-- Los anuncios seguirán mostrándose, pero serán genéricos
-- Puede desinstalar la aplicación en cualquier momento
+### 7.1 Sus Derechos
+- **Acceso:** Todos sus datos están disponibles en la aplicación
+- **Modificación:** Puede editar cualquier información en cualquier momento
+- **Eliminación:** Puede borrar datos específicos o todos los datos
+- **Portabilidad:** Puede exportar sus datos usando la función de respaldo
+
+### 7.2 Control de Datos
+- **Eliminar clientes:** Elimina automáticamente todos los préstamos asociados
+- **Limpiar datos:** Opción para borrar toda la información de la aplicación
+- **Desinstalar:** Elimina todos los datos locales automáticamente
 
 ## 8. Menores de Edad
 
-Esta aplicación no está dirigida a menores de 13 años. No recopilamos intencionalmente información personal de menores de 13 años.
+Esta aplicación está destinada a usuarios mayores de 18 años. No recopilamos conscientemente información de menores de 13 años. Si descubrimos que hemos recopilado información de un menor de 13 años, la eliminaremos inmediatamente.
 
-## 9. Cambios en esta Política
+## 9. Cambios Internacionales
 
-Podemos actualizar esta política de privacidad ocasionalmente. Le notificaremos sobre cambios significativos a través de la aplicación.
+### 9.1 Cumplimiento GDPR (Unión Europea)
+Si usted está en la UE, tiene derechos adicionales:
+- Derecho al olvido
+- Derecho a la portabilidad de datos
+- Derecho a oponerse al procesamiento
+- Derecho a rectificación
 
-## 10. Contacto
+### 9.2 Cumplimiento CCPA (California)
+Si usted está en California, tiene derecho a:
+- Saber qué información personal recopilamos
+- Solicitar eliminación de información personal
+- No discriminación por ejercer sus derechos
 
-Si tiene preguntas sobre esta política de privacidad, puede contactarnos:
+## 10. Servicios de Terceros
 
-- **Email**: Apper2025@icloud.com
-- **Aplicación**: A través de la sección de configuración
-- **País**: Perú
+### 10.1 RevenueCat
+- **Proveedor:** RevenueCat, Inc.
+- **Propósito:** Gestión de suscripciones premium
+- **Política:** https://www.revenuecat.com/privacy
+- **Datos:** Solo información de suscripción necesaria
 
-## 11. Información Adicional
+### 10.2 Expo/React Native
+- **Servicios de desarrollo** utilizados para crear la aplicación
+- **No procesan datos del usuario** en tiempo de ejecución
 
-### 11.1 Cumplimiento Legal
-Esta política cumple con:
-- **GDPR** (Reglamento General de Protección de Datos)
-- **CCPA** (Ley de Privacidad del Consumidor de California)
-- **COPPA** (Ley de Protección de Privacidad Infantil en Línea)
-- **Políticas de App Store** de Apple
+### 10.3 Sin Servicios de Publicidad
+- **No utilizamos AdMob, Google Ads, Facebook Ads o similares**
+- **No recopilamos datos para publicidad**
+- **No mostramos anuncios en la aplicación**
 
-### 11.2 Transferencias Internacionales
-Sus datos se procesan en su dispositivo local. No realizamos transferencias internacionales de datos. La aplicación opera desde Perú y cumple con las leyes de protección de datos peruanas y las políticas de App Store.
+## 11. Retención de Datos
 
-### 11.3 Base Legal
-Procesamos sus datos basándonos en:
-- **Consentimiento**: Para anuncios personalizados
-- **Interés legítimo**: Para mejorar la aplicación
-- **Cumplimiento legal**: Cuando sea requerido por ley
-- **Cumplimiento con App Store**: Para cumplir con las políticas de Apple
+- **Datos locales:** Permanecen hasta que usted los elimine o desinstale la app
+- **Datos de suscripción:** Controlados por las políticas de RevenueCat y App Store
+- **No hay retención en servidor:** No almacenamos datos en servidores externos
+
+## 12. Contacto y Soporte
+
+Si tiene preguntas sobre esta Política de Privacidad o sobre el manejo de sus datos:
+
+**Email:** Apper2025@icloud.com
+**Asunto:** Privacidad - Gestor de Créditos
+
+Responderemos a sus consultas dentro de 72 horas.
+
+## 13. Actualizaciones de la Política
+
+Esta Política de Privacidad puede actualizarse ocasionalmente. Los cambios importantes serán notificados a través de:
+- Actualización de la aplicación
+- Notificación en la aplicación
+- Nueva fecha de "última actualización" en este documento
+
+## 14. Aceptación
+
+Al utilizar la aplicación Gestor de Créditos, usted acepta esta Política de Privacidad. Si no está de acuerdo, no utilice la aplicación.
 
 ---
 
-**Al usar Gestor de Créditos, usted acepta esta política de privacidad.** 
+**Documento legal válido desde el 15 de enero de 2025**
+
+**© 2025 Apper2025 - Gestor de Créditos**

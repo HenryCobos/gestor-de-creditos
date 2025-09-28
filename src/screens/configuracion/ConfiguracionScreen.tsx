@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, StyleSheet, Alert, Switch, TouchableOpacity } from 'react-native';
 import { useApp } from '../../context/AppContext';
-import { Card, Button, Input, LoadingSpinner, OptionSelector } from '../../components';
+import { Card, Button, Input, LoadingSpinner, LimitIndicator } from '../../components';
+import { ContextualPaywall } from '../../components/paywall/ContextualPaywall';
 import { NotificationService } from '../../services/notifications';
-import { StorageService } from '../../services/storage';
+import { AutoBackupService } from '../../services/autoBackup';
+import { usePremium } from '../../hooks/usePremium';
+import { useContextualPaywall } from '../../hooks/useContextualPaywall';
+import { useOnboarding } from '../../hooks/useOnboarding';
+import { useUser } from '../../hooks/useUser';
+import { UserProfileModal } from '../../components';
 
 export function ConfiguracionScreen() {
-  const { state, dispatch, actualizarConfiguracion } = useApp();
+  const { state, actualizarConfiguracion } = useApp();
+  const premium = usePremium();
+  const contextualPaywall = useContextualPaywall();
+  const onboarding = useOnboarding();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
   const [permisosNotificaciones, setPermisosNotificaciones] = useState({
     granted: false,
     canAskAgain: false,
@@ -43,101 +54,9 @@ export function ConfiguracionScreen() {
       Alert.alert('Éxito', 'Configuración guardada correctamente');
     } catch (error) {
       Alert.alert('Error', 'No se pudo guardar la configuración');
-      console.error('Error al guardar configuración:', error);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleResetearConfiguracion = () => {
-    Alert.alert(
-      'Resetear Configuración',
-      '¿Estás seguro de que quieres restablecer toda la configuración a los valores por defecto?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Resetear',
-          style: 'destructive',
-          onPress: () => {
-            const defaultConfig = {
-              moneda: 'COP',
-              formatoFecha: 'dd/MM/yyyy',
-              recordatoriosPago: true,
-              diasAnticipacion: 3,
-              horaRecordatorio: '09:00',
-              respaldoAutomatico: false,
-              tema: 'claro' as const
-            };
-            setConfig(defaultConfig);
-          }
-        }
-      ]
-    );
-  };
-
-  const handleCrearRespaldo = async () => {
-    setIsLoading(true);
-    try {
-      const backupString = await StorageService.createBackup();
-      // En una app real, aquí podrías compartir el archivo o guardarlo en almacenamiento externo
-      Alert.alert(
-        'Respaldo Creado',
-        `Respaldo creado exitosamente.\n\nTamaño: ${(backupString.length / 1024).toFixed(2)} KB\n\nEn una versión completa, este respaldo se guardaría en tu dispositivo o se compartiría por email.`,
-        [{ text: 'OK' }]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo crear el respaldo');
-      console.error('Error al crear respaldo:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleLimpiarDatos = () => {
-    Alert.alert(
-      '⚠️ Eliminar Todos los Datos',
-      'Esta acción eliminará TODOS tus clientes, préstamos, cuotas y pagos. Esta acción NO SE PUEDE DESHACER.\n\n¿Estás completamente seguro?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'ELIMINAR TODO',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Confirmación Final',
-              'Última oportunidad para cancelar. ¿Realmente quieres eliminar todos los datos?',
-              [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                  text: 'SÍ, ELIMINAR',
-                  style: 'destructive',
-                  onPress: async () => {
-                    setIsLoading(true);
-                    try {
-                      await StorageService.clearAllData();
-                      // Reinicializar el estado de la app
-                      dispatch({ type: 'RESET_APP' });
-                      Alert.alert('Datos Eliminados', 'Todos los datos han sido eliminados correctamente');
-                    } catch (error) {
-                      Alert.alert('Error', 'No se pudieron eliminar todos los datos');
-                      console.error('Error al limpiar datos:', error);
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }
-                }
-              ]
-            );
-          }
-        }
-      ]
-    );
-  };
-
-  const formatearTamaño = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1048576).toFixed(1)} MB`;
   };
 
   if (isLoading) {
@@ -146,6 +65,76 @@ export function ConfiguracionScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Header Premium */}
+      <Card style={styles.headerCard}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>
+              {premium.isPremium ? '✅ Premium Activo' : '🚀 Actualizar a Premium'}
+            </Text>
+            <Text style={styles.headerSubtitle}>
+              {premium.isPremium 
+                ? 'Disfruta de todas las funciones sin límites' 
+                : 'Desbloquea todas las funciones y elimina los límites'
+              }
+            </Text>
+          </View>
+          {!premium.isPremium && (
+            <Button
+              title="Ver Planes"
+              onPress={() => contextualPaywall.showPaywall('reportes_avanzados')}
+              size="small"
+              style={styles.headerButton}
+            />
+          )}
+        </View>
+      </Card>
+
+      {/* Límites - Solo si no es premium */}
+      {!premium.isPremium && (
+        <Card style={styles.card}>
+          <Text style={styles.sectionTitle}>📊 Límites Actuales</Text>
+          <View style={styles.limitsContainer}>
+            <LimitIndicator
+              current={state.clientes.length}
+              limit={10}
+              label="Clientes"
+              icon="👥"
+              onUpgrade={() => contextualPaywall.showPaywall('create_cliente')}
+            />
+            <LimitIndicator
+              current={state.prestamos.filter(p => p.estado === 'activo').length}
+              limit={10}
+              label="Préstamos Activos"
+              icon="💰"
+              onUpgrade={() => contextualPaywall.showPaywall('create_prestamo')}
+            />
+          </View>
+        </Card>
+      )}
+
+      {/* Perfil de Usuario */}
+      <Card style={styles.card}>
+        <TouchableOpacity 
+          style={styles.userInfoContainer}
+          onPress={() => {
+            console.log('Opening user profile modal...');
+            setShowUserProfile(true);
+          }}
+        >
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>Usuario Anónimo</Text>
+            <Text style={styles.userStatus}>🎯 Identificado por dispositivo</Text>
+            {user && (
+              <Text style={styles.userDetails}>
+                Usuario desde: {new Date(user.installationDate).toLocaleDateString()}
+              </Text>
+            )}
+          </View>
+          <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+      </Card>
+
       {/* Configuración de Notificaciones */}
       <Card style={styles.card}>
         <Text style={styles.sectionTitle}>🔔 Notificaciones</Text>
@@ -164,106 +153,47 @@ export function ConfiguracionScreen() {
         </View>
 
         {config.recordatoriosPago && (
-          <>
-            <View style={styles.configItem}>
-              <Text style={styles.configLabel}>Días de Anticipación</Text>
-              <View style={styles.numberInputContainer}>
-                <Input
-                  value={config.diasAnticipacion.toString()}
-                  onChangeText={(value) => setConfig({ ...config, diasAnticipacion: parseInt(value) || 3 })}
-                  placeholder="3"
-                  keyboardType="numeric"
-                />
-              </View>
+          <View style={styles.configItem}>
+            <Text style={styles.configLabel}>Días de Anticipación</Text>
+            <View style={styles.numberInputContainer}>
+              <Input
+                value={config.diasAnticipacion.toString()}
+                onChangeText={(value) => setConfig({ ...config, diasAnticipacion: parseInt(value) || 3 })}
+                placeholder="3"
+                keyboardType="numeric"
+              />
             </View>
-
-            <View style={styles.configItem}>
-              <Text style={styles.configLabel}>Hora de Recordatorio</Text>
-              <View style={styles.timeInputContainer}>
-                <Input
-                  value={config.horaRecordatorio}
-                  onChangeText={(value) => setConfig({ ...config, horaRecordatorio: value })}
-                  placeholder="09:00"
-                />
-              </View>
-            </View>
-          </>
+          </View>
         )}
 
-        <View style={styles.permisosSection}>
-          <Text style={styles.permisosTitle}>Estado de Permisos</Text>
-          <View style={styles.permisosInfo}>
-            <Text style={[
-              styles.permisosStatus,
-              { color: permisosNotificaciones.granted ? '#4CAF50' : '#F44336' }
-            ]}>
-              {permisosNotificaciones.granted ? '✅ Concedidos' : '❌ No concedidos'}
+        {!permisosNotificaciones.granted && (
+          <View style={styles.permissionContainer}>
+            <Text style={styles.permissionText}>
+              {permisosNotificaciones.status === 'denied' 
+                ? '❌ Notificaciones deshabilitadas' 
+                : '⚠️ Permisos de notificación requeridos'
+              }
             </Text>
-            {!permisosNotificaciones.granted && (
-              <Button
-                title="Solicitar Permisos"
-                onPress={handleSolicitarPermisos}
-                size="small"
-                variant="outline"
-              />
-            )}
+            <Button
+              title="Habilitar Notificaciones"
+              onPress={handleSolicitarPermisos}
+              size="small"
+              variant="outline"
+              style={styles.permissionButton}
+            />
           </View>
-        </View>
+        )}
       </Card>
 
-      {/* Configuración General */}
+      {/* Configuración de Backup */}
       <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>⚙️ General</Text>
-        
-        <OptionSelector
-          title="Moneda"
-          variant="cards"
-          options={[
-            { key: 'COP', label: 'Peso Colombiano', icon: '🇨🇴' },
-            { key: 'USD', label: 'Dólar', icon: '🇺🇸' },
-            { key: 'EUR', label: 'Euro', icon: '🇪🇺' }
-          ]}
-          selectedKey={config.moneda}
-          onSelect={(key) => setConfig({ ...config, moneda: key })}
-          style={styles.optionSelector}
-        />
-
-        <OptionSelector
-          title="Formato de Fecha"
-          variant="buttons"
-          options={[
-            { key: 'dd/MM/yyyy', label: 'DD/MM/AAAA', icon: '📅' },
-            { key: 'MM/dd/yyyy', label: 'MM/DD/AAAA', icon: '🗓️' },
-            { key: 'yyyy-MM-dd', label: 'AAAA-MM-DD', icon: '📆' }
-          ]}
-          selectedKey={config.formatoFecha}
-          onSelect={(key) => setConfig({ ...config, formatoFecha: key })}
-          style={styles.optionSelector}
-        />
-
-        <OptionSelector
-          title="Tema de la Aplicación"
-          variant="cards"
-          options={[
-            { key: 'claro', label: 'Claro', icon: '☀️', color: '#FF9800' },
-            { key: 'oscuro', label: 'Oscuro', icon: '🌙', color: '#424242' },
-            { key: 'sistema', label: 'Sistema', icon: '📱', color: '#2196F3' }
-          ]}
-          selectedKey={config.tema}
-          onSelect={(key) => setConfig({ ...config, tema: key as any })}
-          style={styles.optionSelector}
-        />
-      </Card>
-
-      {/* Respaldo y Sincronización */}
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>💾 Respaldo de Datos</Text>
+        <Text style={styles.sectionTitle}>☁️ Respaldo Automático</Text>
         
         <View style={styles.configItem}>
           <View style={styles.configInfo}>
-            <Text style={styles.configLabel}>Respaldo Automático</Text>
+            <Text style={styles.configLabel}>Backup Automático</Text>
             <Text style={styles.configDescription}>
-              Crear respaldos automáticamente cada semana
+              Respalda tus datos automáticamente cada 24 horas
             </Text>
           </View>
           <Switch
@@ -272,70 +202,16 @@ export function ConfiguracionScreen() {
           />
         </View>
 
-        <View style={styles.backupActions}>
-          <Button
-            title="📤 Crear Respaldo Manual"
-            onPress={handleCrearRespaldo}
-            variant="outline"
-            style={styles.backupButton}
-          />
-          <Button
-            title="📥 Restaurar desde Respaldo"
-            onPress={() => Alert.alert('Próximamente', 'Esta funcionalidad estará disponible pronto')}
-            variant="outline"
-            style={styles.backupButton}
-          />
+        <View style={styles.configItem}>
+          <View style={styles.configInfo}>
+            <Text style={styles.configLabel}>Estado del Backup</Text>
+            <Text style={styles.configValue}>
+              {config.respaldoAutomatico ? 'Activo' : 'Inactivo'}
+            </Text>
+          </View>
         </View>
       </Card>
 
-      {/* Información de la App */}
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>ℹ️ Información</Text>
-        
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Versión</Text>
-          <Text style={styles.infoValue}>1.0.0</Text>
-        </View>
-        
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Clientes</Text>
-          <Text style={styles.infoValue}>{state.clientes.length}</Text>
-        </View>
-        
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Préstamos</Text>
-          <Text style={styles.infoValue}>{state.prestamos.length}</Text>
-        </View>
-        
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Cuotas</Text>
-          <Text style={styles.infoValue}>{state.cuotas.length}</Text>
-        </View>
-        
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Pagos</Text>
-          <Text style={styles.infoValue}>{state.pagos.length}</Text>
-        </View>
-      </Card>
-
-      {/* Zona de Peligro */}
-      <Card style={styles.dangerCard}>
-        <Text style={styles.sectionTitle}>⚠️ Zona de Peligro</Text>
-        
-        <Button
-          title="🔄 Resetear Configuración"
-          onPress={handleResetearConfiguracion}
-          variant="outline"
-          style={styles.warningButton}
-        />
-        
-        <Button
-          title="🗑️ Eliminar Todos los Datos"
-          onPress={handleLimpiarDatos}
-          variant="outline"
-          style={styles.dangerButton}
-        />
-      </Card>
 
       {/* Botón Guardar */}
       <Card style={styles.card}>
@@ -348,6 +224,40 @@ export function ConfiguracionScreen() {
       </Card>
 
       <View style={styles.bottomSpacing} />
+      
+      {/* Modal de Perfil de Usuario */}
+      <UserProfileModal
+        visible={showUserProfile}
+        onClose={() => setShowUserProfile(false)}
+      />
+      
+      {/* Paywall Contextual */}
+      <ContextualPaywall
+        visible={contextualPaywall.visible}
+        onClose={contextualPaywall.hidePaywall}
+        packages={contextualPaywall.packages}
+        loading={contextualPaywall.loading}
+        onSelect={(pkg) => {
+          // Convertir PurchasesPackage a PricingPlan para handleSubscribe
+          const plan = {
+            id: pkg.identifier,
+            name: pkg.packageType === 'MONTHLY' ? 'Mensual' : 'Anual',
+            price: pkg.product.price,
+            period: pkg.packageType === 'MONTHLY' ? 'monthly' as const : 'yearly' as const,
+            revenueCatId: pkg.identifier,
+            features: [], // Características del plan
+          };
+          contextualPaywall.handleSubscribe(plan);
+        }}
+        onRestore={contextualPaywall.handleRestore}
+        onStartTrial={contextualPaywall.handleStartTrial}
+        context={contextualPaywall.context || {
+          title: '',
+          message: '',
+          icon: '',
+          featureName: '',
+        }}
+      />
     </ScrollView>
   );
 }
@@ -357,21 +267,86 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  headerCard: {
+    margin: 16,
+    marginBottom: 8,
+    backgroundColor: '#e3f2fd',
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerText: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#7f8c8d',
+  },
+  headerButton: {
+    marginLeft: 10,
+  },
   card: {
     margin: 16,
-    marginBottom: 0,
+    marginTop: 8,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: 'bold',
+    color: '#2c3e50',
     marginBottom: 16,
+  },
+  limitsContainer: {
+    gap: 12,
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 4,
+  },
+  userStatus: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 2,
+  },
+  userDetails: {
+    fontSize: 12,
+    color: '#95a5a6',
+  },
+  arrow: {
+    fontSize: 20,
+    color: '#bdc3c7',
+    marginLeft: 10,
   },
   configItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   configInfo: {
     flex: 1,
@@ -379,90 +354,34 @@ const styles = StyleSheet.create({
   },
   configLabel: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 2,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 4,
   },
   configDescription: {
     fontSize: 14,
-    color: '#666',
+    color: '#7f8c8d',
   },
-  numberInput: {
-    width: 80,
-    textAlign: 'center',
-  },
-  timeInput: {
-    width: 100,
-    textAlign: 'center',
-  },
-  permisosSection: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  permisosTitle: {
+  configValue: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
-    marginBottom: 8,
-  },
-  permisosInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  permisosStatus: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  optionSelector: {
-    marginBottom: 16,
-  },
-  backupActions: {
-    gap: 12,
-  },
-  backupButton: {
-    marginBottom: 0,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  infoValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  dangerZone: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#F44336',
-  },
-  dangerCard: {
-    margin: 16,
-    marginBottom: 0,
-    borderLeftWidth: 4,
-    borderLeftColor: '#F44336',
+    color: '#2c3e50',
   },
   numberInputContainer: {
     width: 80,
   },
-  timeInputContainer: {
-    width: 100,
+  permissionContainer: {
+    backgroundColor: '#fff3cd',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
   },
-  warningButton: {
-    marginBottom: 12,
-    borderColor: '#FF9800',
+  permissionText: {
+    fontSize: 14,
+    color: '#856404',
+    marginBottom: 8,
   },
-  dangerButton: {
-    marginBottom: 12,
-    borderColor: '#F44336',
+  permissionButton: {
+    alignSelf: 'flex-start',
   },
   bottomSpacing: {
     height: 32,

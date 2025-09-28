@@ -3,13 +3,18 @@ import { View, ScrollView, Text, StyleSheet, Alert, RefreshControl } from 'react
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../types';
 import { useApp } from '../../context/AppContext';
+import { usePremium } from '../../hooks/usePremium';
+import { useContextualPaywall } from '../../hooks/useContextualPaywall';
+import { useConversionFlow } from '../../hooks/useConversionFlow';
+import { isFeatureAllowed } from '../../utils/featureGating';
 import { 
   Card, 
   Button, 
   LoadingSpinner, 
   EmptyState, 
   Badge,
-  PrestamoCard 
+  PrestamoCard,
+  SimplePaywall 
 } from '../../components';
 import { formatearFecha } from '../../utils/dateUtils';
 
@@ -27,6 +32,10 @@ export function ClienteDetalleScreen() {
     eliminarCliente,
     state 
   } = useApp();
+  
+  const premium = usePremium();
+  const contextualPaywall = useContextualPaywall();
+  const conversionFlow = useConversionFlow();
   
   const [refreshing, setRefreshing] = useState(false);
   
@@ -108,6 +117,19 @@ export function ClienteDetalleScreen() {
   };
 
   const handleCreatePrestamo = () => {
+    // Verificar límite global de préstamos
+    const gate = isFeatureAllowed('create_prestamo', {
+      clientesCount: state.clientes.length,
+      prestamosActivosCount: state.prestamos.filter(p => p.estado === 'activo').length,
+      isPremium: premium.isPremium,
+    });
+    
+    if (!gate.allowed) {
+      conversionFlow.showPaywall('blocking');
+      contextualPaywall.showPaywall('create_prestamo');
+      return;
+    }
+    
     (navigation as any).navigate('PrestamoForm', { clienteId });
   };
 
@@ -151,6 +173,7 @@ export function ClienteDetalleScreen() {
   const stats = calcularEstadisticas();
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView 
       style={styles.container}
       refreshControl={
@@ -290,6 +313,14 @@ export function ClienteDetalleScreen() {
         )}
       </Card>
     </ScrollView>
+    <SimplePaywall
+      visible={contextualPaywall.visible}
+      onClose={contextualPaywall.hidePaywall}
+      onSelect={contextualPaywall.handleSubscribe}
+      onStartTrial={contextualPaywall.handleStartTrial}
+      context={contextualPaywall.context || undefined}
+    />
+  </View>
   );
 }
 

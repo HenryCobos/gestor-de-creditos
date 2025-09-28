@@ -33,7 +33,17 @@ Este repositorio contiene los documentos legales oficiales de la aplicación **G
 
 ## 📅 Última Actualización
 
-**4 de agosto de 2025**
+**8 de enero de 2025**
+
+## 🌐 Sitio Web Oficial
+
+**URL Principal:** https://gestordecreditos.netlify.app
+
+### 📄 Documentos Legales Disponibles
+- **Política de Privacidad:** https://gestordecreditos.netlify.app/POLITICA_PRIVACIDAD.md
+- **Términos de Servicio:** https://gestordecreditos.netlify.app/TERMINOS_SERVICIO.md
+- **Centro de Soporte:** https://gestordecreditos.netlify.app/support.html
+- **Verificación de Sitio:** https://gestordecreditos.netlify.app/verificar-sitio.html
 
 ---
 

@@ -3,7 +3,7 @@ import { View, ScrollView, Text, StyleSheet, FlatList, TouchableOpacity, Alert }
 import { useNavigation } from '@react-navigation/native';
 import { useApp } from '../../context/AppContext';
 import { Card, Button, Badge, LoadingSpinner, EmptyState, CuotaCard, OptionSelector } from '../../components';
-import { BottomBannerAd } from '../../components/ads';
+// Ads eliminados
 import { formatearFecha, formatearFechaTexto, getEstadoFecha, obtenerDiasDelMes, getFechaActual } from '../../utils/dateUtils';
 import { addMonths, subMonths, format, parseISO, startOfMonth, endOfMonth, isSameDay, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -376,12 +376,6 @@ export function CalendarioScreen() {
 
       {/* Vista del calendario */}
       {renderVistaCalendario()}
-
-      {/* Banner publicitario */}
-      <BottomBannerAd 
-        onReceiveAd={() => console.log('📺 Banner cargado en Calendario')}
-        onError={(error) => console.warn('⚠️ Error en banner Calendario:', error)}
-      />
 
       <View style={styles.bottomSpacing} />
     </ScrollView>

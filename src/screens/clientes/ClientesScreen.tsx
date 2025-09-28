@@ -3,12 +3,19 @@ import { View, FlatList, StyleSheet, Alert, RefreshControl } from 'react-native'
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { Button, LoadingSpinner, EmptyState, Input, ClienteCard } from '../../components';
-import { BottomBannerAd, useInterstitialAds } from '../../components/ads';
+import { Button, LoadingSpinner, EmptyState, Input, ClienteCard, LimitIndicator, PremiumBadge } from '../../components';
+import { SimplePaywall } from '../../components/paywall/SimplePaywall';
+// Ads eliminados
+import { usePremium } from '../../hooks/usePremium';
+import { useContextualPaywall } from '../../hooks/useContextualPaywall';
+import { useConversionFlow } from '../../hooks/useConversionFlow';
+import { isFeatureAllowed } from '../../utils/featureGating';
 
 export function ClientesScreen() {
   const navigation = useNavigation();
-  const { showOnNavigation } = useInterstitialAds();
+  const premium = usePremium();
+  const contextualPaywall = useContextualPaywall();
+  const conversionFlow = useConversionFlow();
   const { 
     state, 
     obtenerClientesFiltrados, 
@@ -43,6 +50,23 @@ export function ClientesScreen() {
   };
 
   const handleCreateCliente = () => {
+    // Verificar si debe mostrar paywall preventivo
+    if (conversionFlow.shouldShowPreventivePaywall()) {
+      conversionFlow.showPaywall('preventive');
+      contextualPaywall.showPaywall('create_cliente');
+      return;
+    }
+
+    const gate = isFeatureAllowed('create_cliente', {
+      clientesCount: state.clientes.length,
+      prestamosActivosCount: state.prestamos.filter(p => p.estado === 'activo').length,
+      isPremium: premium.isPremium,
+    });
+    if (!gate.allowed) {
+      conversionFlow.showPaywall('blocking');
+      contextualPaywall.showPaywall('create_cliente');
+      return;
+    }
     (navigation as any).navigate('ClienteForm');
   };
 
@@ -51,7 +75,6 @@ export function ClientesScreen() {
   };
 
   const handleViewCliente = async (clienteId: string) => {
-    await showOnNavigation();
     (navigation as any).navigate('ClienteDetalle', { clienteId });
   };
 
@@ -108,7 +131,18 @@ export function ClientesScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header con búsqueda y botón crear */}
+      {/* Indicador de límites para usuarios no premium */}
+      {!premium.isPremium && (
+        <LimitIndicator
+          current={state.clientes.length}
+          limit={10}
+          label="Clientes"
+          icon="👥"
+          onUpgrade={() => contextualPaywall.showPaywall('create_cliente')}
+        />
+      )}
+
+      {/* Header con búsqueda y botones */}
       <View style={styles.header}>
         <Input
           placeholder="Buscar clientes..."
@@ -118,12 +152,21 @@ export function ClientesScreen() {
         />
         
         <Button
+          title="⚙️"
+          onPress={() => (navigation as any).navigate('Configuracion')}
+          size="small"
+          variant="outline"
+          style={styles.settingsButton}
+        />
+        
+        <Button
           title="+ Nuevo Cliente"
           onPress={handleCreateCliente}
           size="small"
           style={styles.createButton}
         />
       </View>
+
 
       {/* Lista de clientes */}
       {clientesFiltrados.length === 0 ? (
@@ -167,11 +210,20 @@ export function ClientesScreen() {
         />
       )}
       
-      {/* Banner publicitario */}
-      <BottomBannerAd 
-        onReceiveAd={() => console.log('📺 Banner cargado en Clientes')}
-        onError={(error) => console.warn('⚠️ Error en banner Clientes:', error)}
+      {/* Paywall Simple */}
+      <SimplePaywall
+        visible={contextualPaywall.visible}
+        onClose={contextualPaywall.hidePaywall}
+        onSelect={contextualPaywall.handleSubscribe}
+        onStartTrial={contextualPaywall.handleStartTrial}
+        context={{
+          currentUsage: contextualPaywall.context?.currentUsage || state.clientes.length,
+          limit: contextualPaywall.context?.limit || 10,
+          featureName: contextualPaywall.context?.featureName || 'Clientes',
+        }}
       />
+      
+      {/* Espacio inferior para safe area */}
     </View>
   );
 }
@@ -194,6 +246,10 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     marginVertical: 0,
+  },
+  settingsButton: {
+    minWidth: 40,
+    paddingHorizontal: 12,
   },
   
   createButton: {
