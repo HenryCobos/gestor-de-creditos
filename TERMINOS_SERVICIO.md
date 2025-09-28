@@ -1,6 +1,6 @@
 # Términos de Servicio - Gestor de Créditos
 
-**Última actualización:** 28 de septiembre de 2024
+**Última actualización:** 28 de septiembre de 2025
 
 ## 1. Aceptación de los Términos
 

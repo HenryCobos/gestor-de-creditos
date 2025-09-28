@@ -1,6 +1,6 @@
 # Términos de Servicio - Gestor de Créditos
 
-**Última actualización:** 28 de septiembre de 2024
+**Última actualización:** 28 de septiembre de 2025
 
 ## 1. Aceptación de los Términos
 
@@ -198,4 +198,4 @@ Estos Términos son efectivos desde el 28 de septiembre de 2024 y permanecen vig
 
 **Estos Términos de Servicio son efectivos a partir del 28 de septiembre de 2024.**
 
-**Última actualización:** 28 de septiembre de 2024
+**Última actualización:** 28 de septiembre de 2025

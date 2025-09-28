@@ -1,6 +1,6 @@
 # Política de Privacidad - Gestor de Créditos
 
-**Última actualización:** 28 de septiembre de 2024
+**Última actualización:** 28 de septiembre de 2025
 
 ## 1. Información General
 
@@ -147,4 +147,4 @@ Cualquier disputa se resolverá a través de los tribunales competentes de Perú
 
 **Esta Política de Privacidad es efectiva a partir del 28 de septiembre de 2024.**
 
-**Última actualización:** 28 de septiembre de 2024
+**Última actualización:** 28 de septiembre de 2025
