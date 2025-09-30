@@ -244,6 +244,21 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
 
           {/* Footer fijo */}
           <View style={styles.footer}>
+            <View style={styles.legalContainer}>
+              <Text style={styles.legalText}>
+                Al suscribirte aceptas nuestros
+                {' '}<Text style={styles.link} onPress={() => {
+                  const { Linking } = require('react-native');
+                  Linking.openURL('https://gestordecreditos.netlify.app/TERMINOS_SERVICIO.md');
+                }}>Términos de Uso</Text>
+                {' '}y la{' '}
+                <Text style={styles.link} onPress={() => {
+                  const { Linking } = require('react-native');
+                  Linking.openURL('https://gestordecreditos.netlify.app/POLITICA_PRIVACIDAD.md');
+                }}>Política de Privacidad</Text>.
+              </Text>
+            </View>
+
             <TouchableOpacity onPress={onRestore} style={styles.restoreButton}>
               <Text style={styles.restoreText}>Restaurar compras</Text>
             </TouchableOpacity>
@@ -480,6 +495,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     alignItems: 'center',
+  },
+  legalContainer: {
+    paddingBottom: 8,
+  },
+  legalText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+  },
+  link: {
+    color: '#1976D2',
+    textDecorationLine: 'underline',
   },
   restoreButton: {
     marginBottom: 12,

@@ -10,9 +10,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "description": "Aplicación completa para gestionar préstamos, clientes y cuotas. Ideal para prestamistas, microfinanzas y gestión de créditos personales. Versión gratuita con funciones premium disponibles por suscripción.",
-    "privacy": "https://raw.githubusercontent.com/HenryCobos/gestor-de-creditos/master/POLITICA_PRIVACIDAD.md",
-    "terms": "https://raw.githubusercontent.com/HenryCobos/gestor-de-creditos/master/TERMINOS_SERVICIO.md",
-    "support": "https://raw.githubusercontent.com/HenryCobos/gestor-de-creditos/master/support.html",
+    "privacy": "https://gestordecreditos.netlify.app/POLITICA_PRIVACIDAD.md",
+    "terms": "https://gestordecreditos.netlify.app/TERMINOS_SERVICIO.md",
+    "support": "https://gestordecreditos.netlify.app/support.html",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",

@@ -1,6 +1,6 @@
 # Política de Privacidad - Gestor de Créditos
 
-**Última actualización:** 28 de septiembre de 2025
+**Última actualización:** 30 de septiembre de 2025
 
 ## 1. Información General
 
@@ -183,6 +183,6 @@ Al utilizar la aplicación Gestor de Créditos, usted acepta esta Política de P
 
 ---
 
-**Documento legal válido desde el 15 de enero de 2025**
+**Documento legal válido desde el 30 de septiembre de 2025**
 
 **© 2025 Apper2025 - Gestor de Créditos**

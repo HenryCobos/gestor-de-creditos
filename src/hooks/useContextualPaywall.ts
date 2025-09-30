@@ -114,8 +114,22 @@ export function useContextualPaywall() {
     setContext(null);
   }, []);
 
-  const handleSubscribe = useCallback(async (pkg: any) => {
-    const result = await premium.subscribe(pkg);
+  const handleSubscribe = useCallback(async (selected: any) => {
+    // Acepta tanto paquetes de RevenueCat como planes locales (PricingPlan)
+    let packageToPurchase = selected;
+
+    // Si viene de SimplePaywall (PricingPlan), mapear al paquete de RevenueCat
+    if (selected && typeof selected === 'object' && 'revenueCatId' in selected && !('product' in selected)) {
+      const revenueCatId = (selected as any).revenueCatId;
+      const found = (premium.packages || []).find((p: any) => p?.identifier === revenueCatId);
+      if (found) {
+        packageToPurchase = found;
+      } else {
+        console.warn('Paquete de RevenueCat no encontrado para', revenueCatId);
+      }
+    }
+
+    const result = await premium.subscribe(packageToPurchase);
     if (result.success) {
       hidePaywall();
     }

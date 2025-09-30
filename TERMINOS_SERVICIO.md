@@ -1,6 +1,6 @@
 # Términos de Servicio - Gestor de Créditos
 
-**Última actualización:** 28 de septiembre de 2025
+**Última actualización:** 30 de septiembre de 2025
 
 ## 1. Aceptación de los Términos
 
@@ -210,7 +210,7 @@ Al usar Gestor de Créditos, usted reconoce que:
 
 ---
 
-**Términos válidos desde el 15 de enero de 2025**
+**Términos válidos desde el 30 de septiembre de 2025**
 
 **© 2025 Apper2025 - Gestor de Créditos**
 
