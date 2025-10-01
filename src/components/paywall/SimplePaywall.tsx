@@ -25,16 +25,36 @@ export const SimplePaywall: React.FC<SimplePaywallProps> = ({
   context
 }) => {
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const plans = PricingService.getPlans();
 
-  const handleSelectPlan = (plan: PricingPlan) => {
+  const handleSelectPlan = async (plan: PricingPlan) => {
+    console.log('💳 Plan seleccionado:', plan);
     setSelectedPlan(plan);
-    onSelect(plan);
+    setIsProcessing(true);
+    
+    try {
+      await onSelect(plan);
+      // No cerramos aquí - el hook useContextualPaywall se encarga de cerrar si es exitoso
+    } catch (error) {
+      console.error('❌ Error al seleccionar plan:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handleStartTrial = () => {
-    onStartTrial();
-    onClose();
+  const handleStartTrial = async () => {
+    console.log('🎁 Iniciando trial desde SimplePaywall');
+    setIsProcessing(true);
+    
+    try {
+      await onStartTrial();
+      // No cerramos aquí - el hook useContextualPaywall se encarga de cerrar si es exitoso
+    } catch (error) {
+      console.error('❌ Error al iniciar trial:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (!visible) return null;
@@ -125,9 +145,11 @@ export const SimplePaywall: React.FC<SimplePaywallProps> = ({
                   style={[
                     styles.planCard,
                     plan.isPopular && styles.popularPlan,
-                    selectedPlan?.id === plan.id && styles.selectedPlan
+                    selectedPlan?.id === plan.id && styles.selectedPlan,
+                    isProcessing && styles.planCardDisabled
                   ]}
                   onPress={() => handleSelectPlan(plan)}
+                  disabled={isProcessing}
                 >
                   {plan.isPopular && (
                     <View style={styles.popularBadge}>
@@ -141,6 +163,9 @@ export const SimplePaywall: React.FC<SimplePaywallProps> = ({
                       <Text style={styles.planPrice}>
                         {PricingService.formatPrice(plan.price)}
                       </Text>
+                      <Text style={styles.pricePeriod}>
+                        {plan.period === 'yearly' ? 'por año' : 'por mes'}
+                      </Text>
                       {plan.period === 'yearly' && (
                         <Text style={styles.pricePerMonth}>
                           /mes ({PricingService.formatPrice(PricingService.getPricePerMonth(plan.price))})
@@ -152,6 +177,9 @@ export const SimplePaywall: React.FC<SimplePaywallProps> = ({
                         Ahorras {PricingService.formatPrice(plan.savings)} al año
                       </Text>
                     )}
+                    <Text style={styles.subscriptionInfo}>
+                      Suscripción auto-renovable {plan.period === 'yearly' ? 'anual' : 'mensual'}
+                    </Text>
                   </View>
                   
                   <View style={styles.planArrow}>
@@ -164,10 +192,26 @@ export const SimplePaywall: React.FC<SimplePaywallProps> = ({
             {/* Trial Option */}
             <View style={styles.trialContainer}>
               <Text style={styles.trialText}>¿No estás seguro?</Text>
-              <TouchableOpacity style={styles.trialButton} onPress={handleStartTrial}>
-                <Text style={styles.trialButtonText}>Probar 3 días gratis</Text>
+              <TouchableOpacity 
+                style={[styles.trialButton, isProcessing && styles.trialButtonDisabled]} 
+                onPress={handleStartTrial}
+                disabled={isProcessing}
+              >
+                <Text style={styles.trialButtonText}>
+                  {isProcessing ? 'Procesando...' : 'Probar 3 días gratis'}
+                </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Loading Overlay */}
+            {isProcessing && (
+              <View style={styles.loadingOverlay}>
+                <View style={styles.loadingBox}>
+                  <Text style={styles.loadingText}>Procesando compra...</Text>
+                  <Text style={styles.loadingSubText}>Por favor espera</Text>
+                </View>
+              </View>
+            )}
           </ScrollView>
 
           {/* Footer fijo */}
@@ -184,6 +228,10 @@ export const SimplePaywall: React.FC<SimplePaywallProps> = ({
                   const { Linking } = require('react-native');
                   Linking.openURL('https://gestordecreditos.netlify.app/POLITICA_PRIVACIDAD.md');
                 }}>Política de Privacidad</Text>.
+              </Text>
+              <Text style={styles.legalSubText}>
+                Renovación automática salvo cancelación 24 h antes del final del período.
+                Gestiona tu suscripción en Ajustes de Apple ID. El cobro lo realiza Apple.
               </Text>
             </View>
             <TouchableOpacity style={styles.laterButton} onPress={onClose}>
@@ -340,6 +388,9 @@ const styles = StyleSheet.create({
     borderColor: '#27ae60',
     backgroundColor: '#f0fff4',
   },
+  planCardDisabled: {
+    opacity: 0.5,
+  },
   popularBadge: {
     position: 'absolute',
     top: -8,
@@ -377,6 +428,17 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     marginLeft: 4,
   },
+  pricePeriod: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    marginLeft: 4,
+  },
+  subscriptionInfo: {
+    fontSize: 11,
+    color: '#95a5a6',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
   savingsText: {
     fontSize: 12,
     color: '#27ae60',
@@ -412,6 +474,42 @@ const styles = StyleSheet.create({
     color: '#3498db',
     fontSize: 14,
     fontWeight: '600',
+  },
+  trialButtonDisabled: {
+    opacity: 0.5,
+    borderColor: '#95a5a6',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingBox: {
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 8,
+  },
+  loadingSubText: {
+    fontSize: 14,
+    color: '#7f8c8d',
   },
   closeButton: {
     position: 'absolute',
@@ -449,6 +547,13 @@ const styles = StyleSheet.create({
   link: {
     color: '#1976D2',
     textDecorationLine: 'underline',
+  },
+  legalSubText: {
+    fontSize: 11,
+    color: '#8a8a8a',
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 16,
   },
   laterButton: {
     alignItems: 'center',

@@ -105,17 +105,58 @@ Usted es responsable de:
 
 ## 7. Suscripciones Premium y Servicios de Terceros
 
-### 7.1 Suscripciones Premium
-- La Aplicación ofrece suscripciones premium a través de RevenueCat y App Store
-- Las suscripciones se procesan a través de los sistemas de Apple
-- Los precios y términos están sujetos a las políticas de App Store
+### 7.1 Suscripciones Auto-Renovables Premium
 
-### 7.2 Servicios de Terceros
-- RevenueCat gestiona las suscripciones premium
-- Apple procesa los pagos a través de App Store
-- No somos responsables de problemas de facturación de Apple
+La Aplicación ofrece las siguientes suscripciones auto-renovables a través de App Store:
 
-### 7.3 Sin Servicios de Publicidad
+#### Gestor de Créditos Premium - Mensual
+- **Duración:** 1 mes (renovación automática mensual)
+- **Precio:** $9.99 USD por mes (el precio puede variar según tu país)
+- **Prueba gratuita:** 3 días de prueba gratuita (si está disponible)
+
+#### Gestor de Créditos Premium - Anual
+- **Duración:** 12 meses (renovación automática anual)
+- **Precio:** $59.99 USD por año (el precio puede variar según tu país)
+- **Precio mensual equivalente:** $5.00 USD/mes
+- **Ahorro:** Ahorras $59.89 USD al año comparado con el plan mensual
+
+#### Beneficios Premium
+- Clientes y préstamos ilimitados
+- Reportes completos con gráficos avanzados
+- Exportación de reportes en PDF
+- Notificaciones personalizadas
+- Sin límites en funcionalidades
+
+### 7.2 Términos de las Suscripciones Auto-Renovables
+
+#### Renovación Automática
+- Las suscripciones se renuevan automáticamente a menos que canceles al menos 24 horas antes del final del período actual
+- El cobro se realiza a tu cuenta de iTunes al confirmar la compra
+- La suscripción se renovará automáticamente al mismo precio a menos que los precios cambien (se te notificará de cualquier cambio)
+
+#### Gestión de Suscripciones
+- Puedes gestionar tus suscripciones en **Ajustes de iOS > Apple ID > Suscripciones**
+- Puedes cancelar la renovación automática en cualquier momento desde la configuración de tu Apple ID
+- La cancelación entrará en vigor al final del período de facturación actual
+- No se ofrecen reembolsos por períodos no utilizados
+
+#### Prueba Gratuita
+- Si se ofrece una prueba gratuita, tendrás acceso completo a las funciones Premium durante el período de prueba
+- Si no cancelas antes de que termine la prueba, se te cobrará automáticamente
+- Puedes cancelar la prueba en cualquier momento desde Ajustes de iOS
+
+#### Facturación
+- Todos los pagos se procesan a través de Apple (App Store)
+- El cobro se realiza en tu moneda local según las tarifas de App Store
+- Los precios incluyen impuestos aplicables según tu ubicación
+
+### 7.3 Servicios de Terceros
+- **RevenueCat** gestiona las suscripciones premium y validación de recibos
+- **Apple App Store** procesa todos los pagos
+- No somos responsables de problemas de facturación de Apple o errores en el procesamiento de pagos
+- Para problemas de facturación, contacta al soporte de Apple
+
+### 7.4 Sin Servicios de Publicidad
 - **No utilizamos AdMob, Google Ads, Facebook Ads o similares**
 - **No mostramos anuncios en la aplicación**
 - **No recopilamos datos para publicidad**

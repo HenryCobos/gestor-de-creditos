@@ -122,11 +122,10 @@ export class PurchasesService {
   static async getCustomerInfo(): Promise<any> {
     const mod = await ensurePurchasesLoaded();
     
-    // En desarrollo, siempre verificar compras simuladas primero
+    // Solo usar modo simulación en Expo Go
     const isExpoGo = (Constants as any)?.appOwnership === 'expo';
-    const isDevelopment = __DEV__ || isExpoGo;
     
-    if (!mod || isDevelopment) {
+    if (!mod || isExpoGo) {
       // Fallback para Expo Go o desarrollo - verificar si hay compra simulada
       console.log('👤 Obteniendo información del cliente simulada');
       const hasSimulatedPurchase = await this.getSimulatedPurchaseStatus();
@@ -169,13 +168,16 @@ export class PurchasesService {
   }
 
   static async purchasePackage(selected: any): Promise<any> {
+    console.log('🛒 purchasePackage llamado con:', selected);
     const mod = await ensurePurchasesLoaded();
     
-    // En desarrollo, siempre usar modo simulación para evitar errores
+    // En desarrollo, solo usar modo simulación en Expo Go
     const isExpoGo = (Constants as any)?.appOwnership === 'expo';
-    const isDevelopment = __DEV__ || isExpoGo;
     
-    if (!mod || isDevelopment) {
+    console.log('🛒 Estado del entorno:', { isExpoGo, isDevelopment: __DEV__, hasMod: !!mod });
+    
+    // Solo simular en Expo Go, no en desarrollo normal (para permitir pruebas reales en TestFlight)
+    if (!mod || isExpoGo) {
       // Simular compra cuando RevenueCat no está disponible o en desarrollo
       console.log('🛒 Simulando compra:', {
         identifier: selected?.identifier || 'gdc_pro_monthly',
@@ -214,11 +216,15 @@ export class PurchasesService {
     });
 
     try {
-      const { customerInfo } = await mod.purchasePackage(selected);
+      const purchaseResult = await mod.purchasePackage(selected);
+      const customerInfo = purchaseResult.customerInfo;
+      
       console.log('✅ Compra exitosa:', {
         entitlements: Object.keys(customerInfo.entitlements.active),
-        isPro: customerInfo.entitlements.active["pro"] != null
+        isPro: customerInfo.entitlements.active["pro"] != null,
+        productIdentifier: purchaseResult.productIdentifier
       });
+      
       return customerInfo;
     } catch (error: any) {
       console.error('❌ Error en compra:', {
@@ -226,6 +232,33 @@ export class PurchasesService {
         message: error.message,
         userCancelled: error.userCancelled
       });
+      
+      // Si el usuario cancela, no mostrar error
+      if (error.userCancelled) {
+        console.log('ℹ️ Usuario canceló la compra');
+        throw new Error('Compra cancelada');
+      }
+      
+      // Manejar errores específicos de validación de recibos
+      // RevenueCat maneja automáticamente el cambio entre producción y sandbox
+      if (error.message && (
+        error.message.includes('Sandbox receipt used in production') ||
+        error.message.includes('receipt')
+      )) {
+        console.log('⚠️ Error de validación de recibo - RevenueCat lo manejará automáticamente');
+        // No lanzar error específico, dejar que RevenueCat maneje la validación
+      }
+      
+      // Errores de conexión o productos no disponibles
+      if (error.message && (
+        error.message.includes('Could not find') ||
+        error.message.includes('not found') ||
+        error.message.includes('timeout')
+      )) {
+        console.log('⚠️ Producto no disponible o error de conexión');
+        throw new Error('El producto no está disponible en este momento. Por favor, intenta más tarde.');
+      }
+      
       throw error;
     }
   }

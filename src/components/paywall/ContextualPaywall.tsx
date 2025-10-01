@@ -123,7 +123,8 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
 
             {loading && (
               <View style={styles.loadingContainer}>
-                <Text style={styles.loadingText}>Cargando opciones...</Text>
+                <Text style={styles.loadingText}>Procesando...</Text>
+                <Text style={styles.loadingSubText}>Por favor espera</Text>
               </View>
             )}
 
@@ -148,6 +149,9 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                       <Text style={styles.packageTitle}>{pkg.product.title}</Text>
                       <View style={styles.priceContainer}>
                         <Text style={styles.packagePrice}>{pkg.product.priceString}</Text>
+                        <Text style={styles.pricePeriod}>
+                          {pkg.packageType === 'ANNUAL' ? 'por año' : 'por mes'}
+                        </Text>
                         {pkg.packageType === 'ANNUAL' && (
                           <Text style={styles.pricePerMonth}>
                             /mes (${(pkg.product.price / 12).toFixed(2)})
@@ -156,6 +160,9 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                       </View>
                       <Text style={styles.packageDescription}>
                         {pkg.packageType === 'MONTHLY' ? 'Facturación mensual' : 'Facturación anual'}
+                      </Text>
+                      <Text style={styles.subscriptionInfo}>
+                        Suscripción auto-renovable {pkg.packageType === 'ANNUAL' ? 'anual' : 'mensual'}
                       </Text>
                       {pkg.packageType === 'ANNUAL' && (
                         <Text style={styles.savingsText}>Ahorras $59.89 al año</Text>
@@ -189,8 +196,10 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                       <Text style={styles.packageTitle}>Mensual</Text>
                       <View style={styles.priceContainer}>
                         <Text style={styles.packagePrice}>$9.99</Text>
+                        <Text style={styles.pricePeriod}>por mes</Text>
                       </View>
                       <Text style={styles.packageDescription}>Facturación mensual</Text>
+                      <Text style={styles.subscriptionInfo}>Suscripción auto-renovable mensual</Text>
                     </View>
                     <View style={styles.packageArrow}>
                       <Text style={styles.arrowText}>→</Text>
@@ -220,9 +229,11 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                       <Text style={styles.packageTitle}>Anual</Text>
                       <View style={styles.priceContainer}>
                         <Text style={styles.packagePrice}>$59.99</Text>
+                        <Text style={styles.pricePeriod}>por año</Text>
                         <Text style={styles.pricePerMonth}>/mes ($5.00)</Text>
                       </View>
                       <Text style={styles.packageDescription}>Facturación anual</Text>
+                      <Text style={styles.subscriptionInfo}>Suscripción auto-renovable anual</Text>
                       <Text style={styles.savingsText}>Ahorras $59.89 al año</Text>
                     </View>
                     <View style={styles.packageArrow}>
@@ -235,8 +246,14 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
 
             {onStartTrial && (
               <View style={styles.trialContainer}>
-                <TouchableOpacity style={styles.trialButton} onPress={onStartTrial}>
-                  <Text style={styles.trialButtonText}>Probar 3 días gratis</Text>
+                <TouchableOpacity 
+                  style={[styles.trialButton, loading && styles.trialButtonDisabled]} 
+                  onPress={onStartTrial}
+                  disabled={loading}
+                >
+                  <Text style={styles.trialButtonText}>
+                    {loading ? 'Procesando...' : 'Probar 3 días gratis'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -256,6 +273,11 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                   const { Linking } = require('react-native');
                   Linking.openURL('https://gestordecreditos.netlify.app/POLITICA_PRIVACIDAD.md');
                 }}>Política de Privacidad</Text>.
+              </Text>
+              <Text style={styles.legalSubText}>
+                La suscripción se renueva automáticamente salvo cancelación al menos 24 horas antes del fin del
+                período. La gestión y cancelación se realiza en Ajustes de Apple ID. El cobro se realiza a tu cuenta
+                de iTunes al confirmar la compra.
               </Text>
             </View>
 
@@ -396,6 +418,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#7f8c8d',
   },
+  loadingSubText: {
+    fontSize: 12,
+    color: '#95a5a6',
+    marginTop: 4,
+  },
   packagesContainer: {
     marginBottom: 16,
   },
@@ -453,6 +480,18 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     fontWeight: '500',
   },
+  pricePeriod: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  subscriptionInfo: {
+    fontSize: 11,
+    color: '#95a5a6',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
   packageDescription: {
     fontSize: 12,
     color: '#7f8c8d',
@@ -488,6 +527,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  trialButtonDisabled: {
+    opacity: 0.5,
+    borderColor: '#95a5a6',
+  },
   footer: {
     paddingHorizontal: 24,
     paddingVertical: 12,
@@ -503,6 +546,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     textAlign: 'center',
+  },
+  legalSubText: {
+    fontSize: 11,
+    color: '#8a8a8a',
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 16,
   },
   link: {
     color: '#1976D2',

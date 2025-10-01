@@ -80,14 +80,18 @@ export function usePremium() {
   useEffect(() => {
     (async () => {
       try {
+        console.log('🚀 Inicializando usePremium...');
+        
         // Inicializar herramientas de desarrollo
         await DevToolsService.initialize();
         
         // Verificar si debemos simular premium
         const shouldSimulate = DevToolsService.shouldSimulatePremium();
+        console.log('🔧 Modo simulación:', shouldSimulate);
         
         if (shouldSimulate) {
           // Modo simulación
+          console.log('🎭 Activando modo simulación premium');
           setState((s) => ({ 
             ...s, 
             isPremium: true, 
@@ -95,16 +99,20 @@ export function usePremium() {
             subscriptionStatus: 'active',
             trialDaysRemaining: 0,
             canStartTrial: false,
+            offeringsLoaded: true,
           }));
           setPackages([]);
-          setState((s) => ({ ...s, offeringsLoaded: true }));
+          console.log('✅ Modo simulación configurado');
           return;
         }
 
         // Inicializar RevenueCat si no está inicializado
         const isExpoGo = (Constants as any)?.appOwnership === 'expo';
+        console.log('📱 Entorno:', { isExpoGo, isDev: __DEV__ });
+        
         if (!isExpoGo) {
           const apiKey = (Constants?.expoConfig as any)?.extra?.REVENUECAT_API_KEY || (Constants?.manifest as any)?.extra?.REVENUECAT_API_KEY;
+          console.log('🔑 API Key disponible:', !!apiKey);
           if (apiKey && !PurchasesService.initialized) {
             await PurchasesService.initialize(apiKey);
             console.log('✅ RevenueCat inicializado en usePremium');
@@ -112,16 +120,21 @@ export function usePremium() {
         }
 
         // Cargar estado inicial
+        console.log('📊 Cargando estado premium...');
         await updatePremiumState();
 
+        console.log('📦 Obteniendo ofertas...');
         const offering = await PurchasesService.getOfferings();
         const pkgs = offering?.availablePackages ?? [];
+        console.log('📦 Paquetes obtenidos:', pkgs.length);
         setPackages(pkgs);
         setState((s) => ({ ...s, offeringsLoaded: true }));
+        console.log('✅ usePremium inicializado correctamente');
       } catch (e: any) {
-        console.error('Error en usePremium:', e);
+        console.error('❌ Error en usePremium:', e);
         setState((s) => ({ ...s, error: e?.message ?? 'Error cargando compras' }));
       } finally {
+        console.log('🏁 Finalizando inicialización de usePremium');
         setState((s) => ({ ...s, loading: false }));
       }
     })();
@@ -137,10 +150,27 @@ export function usePremium() {
   }, [updatePremiumState]);
 
   const subscribe = useCallback(async (pkg: any) => {
+    console.log('🛒 subscribe llamado con:', pkg);
     setState((s) => ({ ...s, loading: true, error: null }));
+    
+    // Timeout de seguridad para resetear loading
+    const timeoutId = setTimeout(() => {
+      console.log('⏰ Timeout de seguridad - reseteando loading');
+      setState((s) => ({ ...s, loading: false }));
+    }, 10000); // 10 segundos timeout
+    
     try {
+      // Verificar si el paquete es válido
+      if (!pkg) {
+        throw new Error('No se seleccionó un paquete de suscripción');
+      }
+      
+      console.log('🛒 Iniciando suscripción con paquete:', pkg.identifier || pkg.id);
+      
       const info = await PurchasesService.purchasePackage(pkg);
       const isPro = info.entitlements.active["pro"] != null;
+      console.log('🛒 Resultado de compra:', { isPro, entitlements: Object.keys(info.entitlements.active) });
+      
       setState((s) => ({ ...s, isPremium: isPro, customerInfo: info }));
       
       // Actualizar estado premium inmediatamente
@@ -148,15 +178,18 @@ export function usePremium() {
       
       // Trackear conversión a premium
       if (isPro) {
-        await AnalyticsService.trackPremiumConverted(pkg.identifier, pkg.product.price);
+        await AnalyticsService.trackPremiumConverted(pkg.identifier || pkg.id, pkg.product?.price || pkg.price);
         console.log('✅ Usuario convertido a Premium');
       }
       
       return { success: true } as const;
     } catch (e: any) {
+      console.error('❌ Error en suscripción:', e);
       setState((s) => ({ ...s, error: e?.message ?? 'No se pudo completar la compra' }));
       return { success: false, error: e } as const;
     } finally {
+      clearTimeout(timeoutId);
+      console.log('🏁 Finalizando suscripción - reseteando loading');
       setState((s) => ({ ...s, loading: false }));
     }
   }, [updatePremiumState]);
@@ -181,34 +214,89 @@ export function usePremium() {
   }, [updatePremiumState]);
 
   const startTrial = useCallback(async () => {
+    console.log('🎁 startTrial llamado');
     setState((s) => ({ ...s, loading: true, error: null }));
+    
+    // Timeout de seguridad para resetear loading
+    const timeoutId = setTimeout(() => {
+      console.log('⏰ Timeout de seguridad - reseteando loading');
+      setState((s) => ({ ...s, loading: false }));
+    }, 10000); // 10 segundos timeout
+    
     try {
-      // TODO: Implementar trial gratuito con RevenueCat
-      // Por ahora simulamos el trial
+      // En producción, el trial gratuito debe ser una suscripción real con período de prueba
+      // Buscar el paquete con trial gratuito (generalmente el mensual)
+      const trialPackage = packages.find(pkg => 
+        pkg.packageType === 'MONTHLY' || 
+        pkg.identifier.includes('monthly') ||
+        pkg.product?.productIdentifier?.includes('monthly')
+      );
+      
+      console.log('🎁 Paquetes disponibles:', packages.length);
+      console.log('🎁 Trial package encontrado:', !!trialPackage);
+      
+      if (!trialPackage) {
+        console.log('⚠️ No se encontró paquete de RevenueCat, usando trial simulado');
+        // Si no hay paquetes reales, simular el trial
+        setState((s) => ({ 
+          ...s, 
+          isPremium: true, 
+          subscriptionStatus: 'trial',
+          trialDaysRemaining: 3,
+          canStartTrial: false,
+          loading: false
+        }));
+        
+        // Programar notificaciones de trial
+        await TrialNotificationService.startTrial();
+        
+        // Trackear inicio de trial
+        await AnalyticsService.trackTrialStarted();
+        
+        console.log('✅ Trial gratuito simulado iniciado exitosamente');
+        return { success: true } as const;
+      }
+      
+      console.log('🎁 Iniciando trial gratuito con paquete:', trialPackage.identifier);
+      
+      // Iniciar compra del paquete con trial gratuito
+      const info = await PurchasesService.purchasePackage(trialPackage);
+      const isPro = info.entitlements.active["pro"] != null;
+      console.log('🎁 Resultado de trial:', { isPro, entitlements: Object.keys(info.entitlements.active) });
+      
       setState((s) => ({ 
         ...s, 
-        isPremium: true, 
-        subscriptionStatus: 'trial',
-        trialDaysRemaining: 3,
-        canStartTrial: false
+        isPremium: isPro, 
+        customerInfo: info,
+        subscriptionStatus: isPro ? 'trial' : 'none',
+        trialDaysRemaining: isPro ? 3 : 0,
+        canStartTrial: !isPro
       }));
       
-      // Programar notificaciones de trial
-      await TrialNotificationService.startTrial();
+      // Actualizar estado premium inmediatamente
+      await updatePremiumState();
       
-      // Trackear inicio de trial
-      await AnalyticsService.trackTrialStarted();
-      
-      // RevenueCat maneja automáticamente el estado de la suscripción
+      if (isPro) {
+        // Programar notificaciones de trial
+        await TrialNotificationService.startTrial();
+        
+        // Trackear inicio de trial
+        await AnalyticsService.trackTrialStarted();
+        
+        console.log('✅ Trial gratuito iniciado exitosamente');
+      }
       
       return { success: true } as const;
     } catch (e: any) {
-      setState((s) => ({ ...s, error: e?.message ?? 'No se pudo iniciar el trial' }));
+      console.error('❌ Error iniciando trial gratuito:', e);
+      setState((s) => ({ ...s, error: e?.message ?? 'No se pudo iniciar el trial gratuito' }));
       return { success: false, error: e } as const;
     } finally {
+      clearTimeout(timeoutId);
+      console.log('🏁 Finalizando trial - reseteando loading');
       setState((s) => ({ ...s, loading: false }));
     }
-  }, []);
+  }, [packages, updatePremiumState]);
 
   return {
     isPremium: state.isPremium,
