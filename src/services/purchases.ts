@@ -63,37 +63,54 @@ export class PurchasesService {
 
   static async getOfferings(): Promise<any | null> {
     const mod = await ensurePurchasesLoaded();
+    const isExpoGo = (Constants as any)?.appOwnership === 'expo';
+    const isLocalDevelopment = __DEV__ && !isExpoGo;
+    
     if (!mod) {
-      // Fallback para Expo Go o cuando RevenueCat no está disponible
-      console.log('📦 Obteniendo ofertas simuladas');
-      this.usingSimulatedOfferings = true;
-      return this.getSimulatedOfferings();
+      // Fallback solo para Expo Go
+      console.log('📦 RevenueCat no disponible - modo Expo Go');
+      if (isLocalDevelopment || isExpoGo) {
+        this.usingSimulatedOfferings = true;
+        return this.getSimulatedOfferings();
+      }
+      return { availablePackages: [] };
     }
     
     try {
       const offerings = await mod.getOfferings();
-      if (offerings && offerings.current) {
-        console.log('✅ Ofertas obtenidas correctamente de RevenueCat');
+      if (offerings && offerings.current && offerings.current.availablePackages && offerings.current.availablePackages.length > 0) {
+        console.log('✅ PRODUCTOS REALES encontrados en RevenueCat');
+        console.log('📦 Cantidad:', offerings.current.availablePackages.length);
         this.usingSimulatedOfferings = false;
         return offerings.current;
       } else {
-        console.log('⚠️ No hay ofertas disponibles en RevenueCat, usando datos simulados');
-        this.usingSimulatedOfferings = true;
-        return this.getSimulatedOfferings();
+        console.warn('⚠️ No hay productos disponibles en RevenueCat');
+        
+        // Solo simular en desarrollo local
+        if (isLocalDevelopment) {
+          console.log('📱 Desarrollo local: usando simulación');
+          this.usingSimulatedOfferings = true;
+          return this.getSimulatedOfferings();
+        } else {
+          // En producción: devolver vacío y mostrar error al usuario
+          console.error('❌ PRODUCCIÓN/TESTFLIGHT: No hay productos configurados');
+          this.usingSimulatedOfferings = false;
+          return { availablePackages: [] };
+        }
       }
     } catch (error: any) {
-      // Manejar errores específicos de RevenueCat de forma más elegante
-      if (error.message && error.message.includes('could not be fetched from App Store Connect')) {
-        console.log('📱 Los productos no están disponibles en App Store Connect aún. Esto es normal durante el desarrollo.');
-        console.log('ℹ️ Usando datos simulados hasta que los productos estén aprobados en App Store Connect');
-      } else if (error.message && error.message.includes('timeout')) {
-        console.log('⏱️ Timeout obteniendo ofertas de RevenueCat, usando datos simulados');
-      } else {
-        console.log('⚠️ Error obteniendo ofertas de RevenueCat:', error.message);
-      }
+      console.error('❌ Error obteniendo ofertas:', error.message);
       
-      this.usingSimulatedOfferings = true;
-      return this.getSimulatedOfferings();
+      // Solo simular en desarrollo local
+      if (isLocalDevelopment) {
+        console.log('📱 Desarrollo: simulando por error');
+        this.usingSimulatedOfferings = true;
+        return this.getSimulatedOfferings();
+      } else {
+        console.error('❌ PRODUCCIÓN: Error - usuarios verán mensaje');
+        this.usingSimulatedOfferings = false;
+        return { availablePackages: [] };
+      }
     }
   }
 
@@ -176,13 +193,20 @@ export class PurchasesService {
     console.log('🛒 purchasePackage llamado con:', selected);
     const mod = await ensurePurchasesLoaded();
     
-    // En desarrollo, solo usar modo simulación en Expo Go
+    // Solo simular en DESARROLLO LOCAL (no en TestFlight/Producción)
     const isExpoGo = (Constants as any)?.appOwnership === 'expo';
+    const isLocalDevelopment = __DEV__ && !isExpoGo;
     
-    console.log('🛒 Estado del entorno:', { isExpoGo, isDevelopment: __DEV__, hasMod: !!mod, usingSimulatedOfferings: this.usingSimulatedOfferings });
+    console.log('🛒 Estado del entorno:', { 
+      isExpoGo, 
+      isDevelopment: __DEV__, 
+      isLocalDevelopment,
+      hasMod: !!mod, 
+      usingSimulatedOfferings: this.usingSimulatedOfferings 
+    });
     
-    // Si estamos usando ofertas simuladas O en Expo Go, simular la compra
-    if (!mod || isExpoGo || this.usingSimulatedOfferings) {
+    // SOLO simular en desarrollo local, NUNCA en TestFlight/producción
+    if (!mod || isExpoGo || (isLocalDevelopment && this.usingSimulatedOfferings)) {
       // Simular compra cuando RevenueCat no está disponible o en desarrollo
       console.log('🎭 MODO SIMULACIÓN ACTIVO - Los productos reales no están disponibles');
       console.log('📱 Esto es normal en desarrollo. En producción (TestFlight/App Store), las compras funcionarán correctamente.');
@@ -216,10 +240,17 @@ export class PurchasesService {
       };
     }
 
-    console.log('🛒 Iniciando compra real:', {
+    // Validar que el paquete sea válido antes de intentar comprar
+    if (!selected || !selected.product || !selected.product.productIdentifier) {
+      console.error('❌ Paquete inválido - no se puede comprar');
+      throw new Error('Los productos no están disponibles. Verifica tu conexión e intenta de nuevo.');
+    }
+
+    console.log('🛒 Iniciando compra REAL con RevenueCat:', {
       identifier: selected.identifier,
       packageType: selected.packageType,
-      price: selected.product?.priceString
+      price: selected.product?.priceString,
+      productId: selected.product.productIdentifier
     });
 
     try {
