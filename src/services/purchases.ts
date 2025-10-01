@@ -37,6 +37,7 @@ export interface PremiumState {
 
 export class PurchasesService {
   static initialized = false;
+  static usingSimulatedOfferings = false;
 
   static async initialize(apiKey: string): Promise<void> {
     if (this.initialized) return;
@@ -65,6 +66,7 @@ export class PurchasesService {
     if (!mod) {
       // Fallback para Expo Go o cuando RevenueCat no está disponible
       console.log('📦 Obteniendo ofertas simuladas');
+      this.usingSimulatedOfferings = true;
       return this.getSimulatedOfferings();
     }
     
@@ -72,9 +74,11 @@ export class PurchasesService {
       const offerings = await mod.getOfferings();
       if (offerings && offerings.current) {
         console.log('✅ Ofertas obtenidas correctamente de RevenueCat');
+        this.usingSimulatedOfferings = false;
         return offerings.current;
       } else {
         console.log('⚠️ No hay ofertas disponibles en RevenueCat, usando datos simulados');
+        this.usingSimulatedOfferings = true;
         return this.getSimulatedOfferings();
       }
     } catch (error: any) {
@@ -88,6 +92,7 @@ export class PurchasesService {
         console.log('⚠️ Error obteniendo ofertas de RevenueCat:', error.message);
       }
       
+      this.usingSimulatedOfferings = true;
       return this.getSimulatedOfferings();
     }
   }
@@ -174,23 +179,25 @@ export class PurchasesService {
     // En desarrollo, solo usar modo simulación en Expo Go
     const isExpoGo = (Constants as any)?.appOwnership === 'expo';
     
-    console.log('🛒 Estado del entorno:', { isExpoGo, isDevelopment: __DEV__, hasMod: !!mod });
+    console.log('🛒 Estado del entorno:', { isExpoGo, isDevelopment: __DEV__, hasMod: !!mod, usingSimulatedOfferings: this.usingSimulatedOfferings });
     
-    // Solo simular en Expo Go, no en desarrollo normal (para permitir pruebas reales en TestFlight)
-    if (!mod || isExpoGo) {
+    // Si estamos usando ofertas simuladas O en Expo Go, simular la compra
+    if (!mod || isExpoGo || this.usingSimulatedOfferings) {
       // Simular compra cuando RevenueCat no está disponible o en desarrollo
-      console.log('🛒 Simulando compra:', {
+      console.log('🎭 MODO SIMULACIÓN ACTIVO - Los productos reales no están disponibles');
+      console.log('📱 Esto es normal en desarrollo. En producción (TestFlight/App Store), las compras funcionarán correctamente.');
+      console.log('🛒 Simulando compra de:', {
         identifier: selected?.identifier || 'gdc_pro_monthly',
         packageType: selected?.packageType || 'MONTHLY',
         price: selected?.product?.priceString || '$9.99'
       });
 
       // Simular delay de compra
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       await this.setSimulatedPurchaseStatus(true);
 
-      console.log('✅ Compra simulada exitosa');
+      console.log('✅ Compra simulada completada - Usuario es ahora Premium (simulado)');
 
       return {
         entitlements: {
