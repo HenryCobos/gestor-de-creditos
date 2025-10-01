@@ -9,10 +9,7 @@
     ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "description": "Aplicación completa para gestionar préstamos, clientes y cuotas. Ideal para prestamistas, microfinanzas y gestión de créditos personales. Versión gratuita con funciones premium disponibles por suscripción.",
-    "privacy": "https://gestordecreditos.netlify.app/POLITICA_PRIVACIDAD.md",
-    "terms": "https://gestordecreditos.netlify.app/TERMINOS_SERVICIO.md",
-    "support": "https://gestordecreditos.netlify.app/support.html",
+    "description": "Aplicación completa para gestionar préstamos, clientes y cuotas. Ideal para prestamistas, microfinanzas y gestión de créditos personales. Versión gratuita con funciones premium disponibles por suscripción.\n\nTérminos de Uso: https://gestordecreditos.netlify.app/TERMINOS_SERVICIO.md\n\nPolítica de Privacidad: https://gestordecreditos.netlify.app/POLITICA_PRIVACIDAD.md",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -20,7 +17,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.gestordecreditos.app",
-      "buildNumber": "106",
+      "buildNumber": "110",
       "supportsTablet": false,
       "infoPlist": {
         "NSCameraUsageDescription": "Esta app no requiere acceso a la cámara",
@@ -28,9 +25,6 @@
         "NSLocationUsageDescription": "Esta app no requiere acceso a la ubicación",
         "NSMicrophoneUsageDescription": "Esta app no requiere acceso al micrófono",
         "ITSAppUsesNonExemptEncryption": false
-      },
-      "podfileProperties": {
-        "ios.deploymentTarget": "12.0"
       }
     },
     "plugins": [
@@ -48,7 +42,8 @@
             "deploymentTarget": "15.1"
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {
