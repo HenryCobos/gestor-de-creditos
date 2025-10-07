@@ -53,6 +53,32 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
   
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Función helper para formatear precios con símbolo de moneda correcto
+  const formatPrice = (price: number, currencyCode?: string): string => {
+    try {
+      if (!currencyCode) {
+        console.warn('⚠️ Sin currencyCode, usando formato USD');
+        return `$${price.toFixed(2)}`;
+      }
+      
+      console.log(`💱 Formateando precio: ${price} ${currencyCode}`);
+      
+      // Usar Intl.NumberFormat para obtener el formato correcto según la moneda
+      const formatter = new Intl.NumberFormat('es-419', {
+        style: 'currency',
+        currency: currencyCode,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      
+      const formatted = formatter.format(price);
+      console.log(`💱 Precio formateado: ${formatted}`);
+      return formatted;
+    } catch (error) {
+      console.error('❌ Error formateando precio:', error);
+      return `$${price.toFixed(2)}`;
+    }
+  };
 
   return (
     <Modal
