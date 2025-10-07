@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { Card, Button, PremiumBadge } from '../ui';
 
@@ -21,6 +21,8 @@ interface ContextualPaywallProps {
   onSelect: (pkg: PurchasesPackage) => void;
   onRestore: () => void;
   onStartTrial?: () => void;
+  onRetry?: () => void;
+  error?: string | null;
   context: {
     title: string;
     message: string;
@@ -41,11 +43,15 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
   onSelect,
   onRestore,
   onStartTrial,
+  onRetry,
+  error,
   context,
 }) => {
   const isNearLimit = context.currentUsage && context.limit 
     ? context.currentUsage >= context.limit * 0.8 
     : false;
+  
+  const [showSuccess, setShowSuccess] = useState(false);
 
 
   return (
@@ -123,13 +129,115 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
 
             {loading && (
               <View style={styles.loadingContainer}>
-                <Text style={styles.loadingText}>Procesando...</Text>
-                <Text style={styles.loadingSubText}>Por favor espera</Text>
+                <View style={styles.loadingSpinner}>
+                  <Text style={styles.loadingSpinnerText}>⟳</Text>
+                </View>
+                <Text style={styles.loadingText}>Procesando compra...</Text>
+                <Text style={styles.loadingSubText}>Por favor espera mientras procesamos tu suscripción</Text>
               </View>
             )}
 
+            {error && !error.includes('already') && !error.includes('suscrito') && !error.includes('subscribed') && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorIcon}>⚠️</Text>
+                <Text style={styles.errorText}>{error}</Text>
+                <Text style={styles.errorSubText}>
+                  Por favor, verifica tu conexión e intenta de nuevo
+                </Text>
+                {onRetry && (
+                  <TouchableOpacity 
+                    style={styles.retryButton}
+                    onPress={onRetry}
+                  >
+                    <Text style={styles.retryButtonText}>🔄 Reintentar</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity 
+                  style={styles.debugButton}
+                  onPress={() => {
+                    console.log('🔍 DEBUG INFO:');
+                    console.log('📦 Packages:', packages);
+                    console.log('📦 Packages length:', packages?.length);
+                    console.log('📦 Packages details:', packages?.map(pkg => ({
+                      identifier: pkg.identifier,
+                      packageType: pkg.packageType,
+                      price: pkg.product?.priceString,
+                      title: pkg.product?.title
+                    })));
+                    console.log('⚠️ Error:', error);
+                    console.log('🔄 Loading:', loading);
+                    alert('Logs enviados a la consola. Revisa la consola de desarrollo.');
+                  }}
+                >
+                  <Text style={styles.debugButtonText}>🔍 Ver Logs</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Mostrar error si no hay productos válidos pero no hay error específico */}
+            {!error && packages && packages.length > 0 && !packages.every(pkg => 
+              pkg && pkg.identifier && pkg.packageType && pkg.product
+            ) && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorIcon}>⚠️</Text>
+                <Text style={styles.errorText}>Faltan algunos datos de los productos</Text>
+                <Text style={styles.errorSubText}>
+                  Intentaremos igualmente mostrar los planes disponibles
+                </Text>
+                {onRetry && (
+                  <TouchableOpacity 
+                    style={styles.retryButton}
+                    onPress={onRetry}
+                  >
+                    <Text style={styles.retryButtonText}>🔄 Reintentar</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            {/* Oculto en producción/TestFlight */}
+            {__DEV__ && (
+              <TouchableOpacity 
+                style={styles.debugInfoButton}
+                onPress={() => {
+                  console.log('🔍 DEBUG INFO COMPLETO:');
+                  console.log('📦 Packages:', packages);
+                  console.log('📦 Packages length:', packages?.length);
+                  console.log('📦 Packages details:', packages?.map(pkg => ({
+                    identifier: pkg.identifier,
+                    packageType: pkg.packageType,
+                    price: pkg.product?.priceString,
+                    title: pkg.product?.title
+                  })));
+                  console.log('⚠️ Error:', error);
+                  console.log('🔄 Loading:', loading);
+                  console.log('🎯 Context:', context);
+                  alert(`Estado actual:\n- Productos: ${packages?.length || 0}\n- Error: ${error || 'Ninguno'}\n- Cargando: ${loading}\n\nRevisa la consola para más detalles.`);
+                }}
+              >
+                <Text style={styles.debugInfoButtonText}>🔍 Estado del Paywall</Text>
+              </TouchableOpacity>
+            )}
+
             <View style={styles.packagesContainer}>
-              {packages && packages.length > 0 ? (
+              {(() => {
+                console.log('🔍 ContextualPaywall - packages recibidos:', packages);
+                console.log('🔍 ContextualPaywall - packages.length:', packages?.length);
+                console.log('🔍 ContextualPaywall - packages detalle:', packages?.map(pkg => ({
+                  identifier: pkg.identifier,
+                  packageType: pkg.packageType,
+                  price: pkg.product?.priceString,
+                  title: pkg.product?.title
+                })));
+                
+                // Verificar si hay productos válidos
+                const hasValidPackages = packages && packages.length > 0 && packages.every(pkg => 
+                  pkg && pkg.identifier && pkg.packageType && pkg.product
+                );
+                
+                console.log('🔍 ContextualPaywall - hasValidPackages:', hasValidPackages);
+                return hasValidPackages;
+              })() ? (
                 packages.map((pkg, index) => (
                   <TouchableOpacity 
                     key={pkg.identifier}
@@ -137,7 +245,9 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                       styles.package,
                       pkg.packageType === 'ANNUAL' && styles.recommendedPackage
                     ]}
-                    onPress={() => onSelect(pkg)} 
+                    onPress={() => {
+                      onSelect(pkg);
+                    }} 
                     disabled={loading}
                   >
                     {pkg.packageType === 'ANNUAL' && (
@@ -146,15 +256,26 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                       </View>
                     )}
                     <View style={styles.packageContent}>
-                      <Text style={styles.packageTitle}>{pkg.product.title}</Text>
+                      <Text style={styles.packageTitle}>{pkg.product.title || (pkg.packageType === 'ANNUAL' ? 'Anual' : 'Mensual')}</Text>
                       <View style={styles.priceContainer}>
-                        <Text style={styles.packagePrice}>{pkg.product.priceString}</Text>
+                        <Text style={styles.packagePrice}>{pkg.product.priceString || '—'}</Text>
                         <Text style={styles.pricePeriod}>
                           {pkg.packageType === 'ANNUAL' ? 'por año' : 'por mes'}
                         </Text>
-                        {pkg.packageType === 'ANNUAL' && (
+                        {pkg.packageType === 'ANNUAL' && pkg.product.priceString && pkg.product.price && (
                           <Text style={styles.pricePerMonth}>
-                            /mes (${(pkg.product.price / 12).toFixed(2)})
+                            /mes ({(() => {
+                              // Extraer símbolo de moneda del priceString
+                              const priceStr = pkg.product.priceString;
+                              const currencySymbol = priceStr.replace(/[\d.,\s]+/g, '').trim();
+                              const monthlyPrice = (pkg.product.price / 12).toFixed(2);
+                              // Mantener el formato original (símbolo antes o después)
+                              if (priceStr.indexOf(currencySymbol) < priceStr.search(/\d/)) {
+                                return `${currencySymbol}${monthlyPrice}`;
+                              } else {
+                                return `${monthlyPrice}${currencySymbol}`;
+                              }
+                            })()})
                           </Text>
                         )}
                       </View>
@@ -164,8 +285,29 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                       <Text style={styles.subscriptionInfo}>
                         Suscripción auto-renovable {pkg.packageType === 'ANNUAL' ? 'anual' : 'mensual'}
                       </Text>
-                      {pkg.packageType === 'ANNUAL' && (
-                        <Text style={styles.savingsText}>Ahorras $59.89 al año</Text>
+                      {pkg.packageType === 'ANNUAL' && pkg.product.price && pkg.product.priceString && (
+                        <Text style={styles.savingsText}>
+                          {(() => {
+                            // Calcular ahorro: (precio mensual * 12) - precio anual
+                            // Para obtener el precio mensual, necesitamos buscar el paquete mensual
+                            const monthlyPkg = packages.find(p => p.packageType === 'MONTHLY');
+                            if (monthlyPkg && monthlyPkg.product && monthlyPkg.product.price) {
+                              const savings = (monthlyPkg.product.price * 12) - pkg.product.price;
+                              if (savings > 0) {
+                                const priceStr = pkg.product.priceString;
+                                const currencySymbol = priceStr.replace(/[\d.,\s]+/g, '').trim();
+                                const savingsStr = savings.toFixed(2);
+                                // Mantener el formato original
+                                if (priceStr.indexOf(currencySymbol) < priceStr.search(/\d/)) {
+                                  return `Ahorras ${currencySymbol}${savingsStr} al año`;
+                                } else {
+                                  return `Ahorras ${savingsStr}${currencySymbol} al año`;
+                                }
+                              }
+                            }
+                            return 'Ahorra con el plan anual';
+                          })()}
+                        </Text>
                       )}
                     </View>
                     <View style={styles.packageArrow}>
@@ -174,73 +316,15 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                   </TouchableOpacity>
                 ))
               ) : (
-                // Fallback con planes por defecto si no hay paquetes de RevenueCat
-                <>
-                  <TouchableOpacity 
-                    style={styles.package}
-                    onPress={() => {
-                      const mockPackage = {
-                        identifier: 'gdc_pro_monthly',
-                        packageType: 'MONTHLY',
-                        product: {
-                          priceString: '$9.99',
-                          price: 9.99,
-                          title: 'Mensual',
-                        }
-                      };
-                      onSelect(mockPackage as any);
-                    }} 
-                    disabled={loading}
-                  >
-                    <View style={styles.packageContent}>
-                      <Text style={styles.packageTitle}>Mensual</Text>
-                      <View style={styles.priceContainer}>
-                        <Text style={styles.packagePrice}>$9.99</Text>
-                        <Text style={styles.pricePeriod}>por mes</Text>
-                      </View>
-                      <Text style={styles.packageDescription}>Facturación mensual</Text>
-                      <Text style={styles.subscriptionInfo}>Suscripción auto-renovable mensual</Text>
-                    </View>
-                    <View style={styles.packageArrow}>
-                      <Text style={styles.arrowText}>→</Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={[styles.package, styles.recommendedPackage]}
-                    onPress={() => {
-                      const mockPackage = {
-                        identifier: 'gdc_pro_yearly',
-                        packageType: 'ANNUAL',
-                        product: {
-                          priceString: '$59.99',
-                          price: 59.99,
-                          title: 'Anual',
-                        }
-                      };
-                      onSelect(mockPackage as any);
-                    }} 
-                    disabled={loading}
-                  >
-                    <View style={styles.recommendedBadge}>
-                      <Text style={styles.recommendedText}>MEJOR OPCIÓN</Text>
-                    </View>
-                    <View style={styles.packageContent}>
-                      <Text style={styles.packageTitle}>Anual</Text>
-                      <View style={styles.priceContainer}>
-                        <Text style={styles.packagePrice}>$59.99</Text>
-                        <Text style={styles.pricePeriod}>por año</Text>
-                        <Text style={styles.pricePerMonth}>/mes ($5.00)</Text>
-                      </View>
-                      <Text style={styles.packageDescription}>Facturación anual</Text>
-                      <Text style={styles.subscriptionInfo}>Suscripción auto-renovable anual</Text>
-                      <Text style={styles.savingsText}>Ahorras $59.89 al año</Text>
-                    </View>
-                    <View style={styles.packageArrow}>
-                      <Text style={styles.arrowText}>→</Text>
-                    </View>
-                  </TouchableOpacity>
-                </>
+                // Sin paquetes reales: solo informar, sin botones simulados
+                <View style={styles.noPackagesContainer}>
+                  <Text style={styles.noPackagesText}>
+                    Los planes de suscripción no están disponibles en este momento.
+                  </Text>
+                  <Text style={styles.noPackagesSubText}>
+                    Verifica la conexión o vuelve a intentarlo más tarde.
+                  </Text>
+                </View>
               )}
             </View>
 
@@ -258,6 +342,19 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
               </View>
             )}
           </ScrollView>
+
+          {/* Overlay de éxito */}
+          {showSuccess && (
+            <View style={styles.successOverlay}>
+              <View style={styles.successContainer}>
+                <Text style={styles.successIcon}>✅</Text>
+                <Text style={styles.successTitle}>¡Compra exitosa!</Text>
+                <Text style={styles.successMessage}>
+                  Ya tienes acceso Premium. Disfruta de todas las funciones.
+                </Text>
+              </View>
+            </View>
+          )}
 
           {/* Footer fijo */}
           <View style={styles.footer}>
@@ -414,14 +511,96 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
   },
+  loadingSpinner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  loadingSpinnerText: {
+    fontSize: 20,
+    color: '#3498db',
+    fontWeight: 'bold',
+  },
   loadingText: {
-    fontSize: 14,
-    color: '#7f8c8d',
+    fontSize: 16,
+    color: '#2c3e50',
+    fontWeight: '600',
+    marginBottom: 4,
   },
   loadingSubText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  errorContainer: {
+    backgroundColor: '#f8d7da',
+    borderColor: '#f5c6cb',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  errorIcon: {
+    fontSize: 24,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#721c24',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  errorSubText: {
     fontSize: 12,
-    color: '#95a5a6',
-    marginTop: 4,
+    color: '#721c24',
+    textAlign: 'center',
+    lineHeight: 16,
+    marginBottom: 12,
+  },
+  retryButton: {
+    backgroundColor: '#721c24',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignSelf: 'center',
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  debugButton: {
+    backgroundColor: '#6c757d',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignSelf: 'center',
+    marginTop: 8,
+  },
+  debugButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  debugInfoButton: {
+    backgroundColor: '#17a2b8',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  debugInfoButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   packagesContainer: {
     marginBottom: 16,
@@ -573,5 +752,66 @@ const styles = StyleSheet.create({
   closeText: {
     color: '#95a5a6',
     fontSize: 14,
+  },
+  noPackagesContainer: {
+    backgroundColor: '#fff3cd',
+    borderColor: '#ffeaa7',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  noPackagesText: {
+    fontSize: 14,
+    color: '#856404',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  noPackagesSubText: {
+    fontSize: 12,
+    color: '#856404',
+    textAlign: 'center',
+  },
+  successOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  successContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    margin: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  successIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#27ae60',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  successMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });

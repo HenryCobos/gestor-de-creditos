@@ -1,0 +1,73 @@
+===========================================
+  NOTAS DE VERSIÓN 1.3.0
+  "What's New" para App Store Connect
+===========================================
+
+🎉 Nueva Versión Premium con Suscripciones
+
+Hemos agregado opciones premium para desbloquear todo el potencial de Gestor de Créditos.
+
+✨ NOVEDADES
+
+💎 Sistema de Suscripciones Premium
+• Plan Mensual: $9.99/mes con prueba de 3 días
+• Plan Anual: $59.99/año (ahorra 50%)
+• Desbloquea clientes y préstamos ilimitados
+• Exportación ilimitada de reportes en PDF
+• Reportes avanzados con análisis detallado
+
+🎁 Prueba Premium GRATIS
+• 3 días de prueba gratuita sin compromiso
+• Cancela en cualquier momento desde Ajustes
+• Acceso completo a todas las funciones premium
+
+📊 Mejoras en Reportes
+• Nuevos reportes mensuales detallados
+• Gráficos de cartera mejorados
+• Análisis de rentabilidad optimizado
+• Exportación PDF con diseño profesional
+
+🔔 Notificaciones Optimizadas
+• Recordatorios más precisos
+• Configuración personalizable
+• Menor consumo de batería
+
+🐛 Correcciones
+• Mejor rendimiento general
+• Interfaz más fluida
+• Corrección de errores menores
+• Optimización de cálculos
+
+📄 Documentación Legal
+• EULA actualizado con información de suscripciones
+• Políticas de privacidad mejoradas
+• Centro de soporte renovado
+
+¡Gracias por usar Gestor de Créditos!
+
+===========================================
+
+VERSIÓN CORTA (Si hay límite de caracteres):
+===========================================
+
+🎉 Versión Premium Disponible
+
+💎 Nuevas Suscripciones:
+• Plan Mensual: $9.99/mes
+• Plan Anual: $59.99/año (50% descuento)
+• Prueba GRATIS de 3 días
+
+✨ Beneficios Premium:
+• Clientes y préstamos ilimitados
+• Exportación PDF ilimitada
+• Reportes avanzados
+• Sin límites
+
+🐛 Mejoras:
+• Notificaciones optimizadas
+• Mejor rendimiento
+• Correcciones menores
+
+¡Prueba Premium y lleva tu gestión al siguiente nivel!
+
+===========================================

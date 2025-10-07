@@ -10,6 +10,7 @@ import { useContextualPaywall } from '../../hooks/useContextualPaywall';
 import { useOnboarding } from '../../hooks/useOnboarding';
 import { useUser } from '../../hooks/useUser';
 import { UserProfileModal } from '../../components';
+import { ReviewService } from '../../services/reviewService';
 
 export function ConfiguracionScreen() {
   const { state, actualizarConfiguracion } = useApp();
@@ -27,10 +28,19 @@ export function ConfiguracionScreen() {
   
   // Estados locales para la configuración
   const [config, setConfig] = useState(state.configuracion);
+  const [reviewStats, setReviewStats] = useState<any>(null);
 
   useEffect(() => {
     verificarPermisos();
+    if (__DEV__) {
+      loadReviewStats();
+    }
   }, []);
+
+  const loadReviewStats = async () => {
+    const stats = await ReviewService.getReviewStats();
+    setReviewStats(stats);
+  };
 
   const verificarPermisos = async () => {
     const permisos = await NotificationService.verificarPermisos();
@@ -223,6 +233,120 @@ export function ConfiguracionScreen() {
         />
       </Card>
 
+      {/* Debug: Sistema de Reseñas - Solo en Desarrollo */}
+      {__DEV__ && reviewStats && (
+        <Card style={StyleSheet.flatten([styles.card, styles.debugCard])}>
+          <Text style={styles.sectionTitle}>🔍 Debug: Sistema de Reseñas</Text>
+          
+          <View style={styles.configItem}>
+            <View style={styles.configInfo}>
+              <Text style={styles.configLabel}>Solicitudes enviadas</Text>
+              <Text style={styles.configDescription}>{reviewStats.requestCount} / 3 máximo</Text>
+            </View>
+          </View>
+
+          <View style={styles.configItem}>
+            <View style={styles.configInfo}>
+              <Text style={styles.configLabel}>Reseña dada</Text>
+              <Text style={styles.configDescription}>{reviewStats.reviewGiven ? 'Sí ✅' : 'No'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.configItem}>
+            <View style={styles.configInfo}>
+              <Text style={styles.configLabel}>Usuario rechazó</Text>
+              <Text style={styles.configDescription}>{reviewStats.declined ? 'Sí' : 'No'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.configItem}>
+            <View style={styles.configInfo}>
+              <Text style={styles.configLabel}>Préstamos completados</Text>
+              <Text style={styles.configDescription}>{reviewStats.loansCompleted}</Text>
+            </View>
+          </View>
+
+          <View style={styles.configItem}>
+            <View style={styles.configInfo}>
+              <Text style={styles.configLabel}>Pagos marcados</Text>
+              <Text style={styles.configDescription}>{reviewStats.paymentsMarked}</Text>
+            </View>
+          </View>
+
+          <View style={styles.configItem}>
+            <View style={styles.configInfo}>
+              <Text style={styles.configLabel}>Reportes exportados</Text>
+              <Text style={styles.configDescription}>{reviewStats.reportsExported}</Text>
+            </View>
+          </View>
+
+          <View style={styles.configItem}>
+            <View style={styles.configInfo}>
+              <Text style={styles.configLabel}>Aperturas de app</Text>
+              <Text style={styles.configDescription}>{reviewStats.appOpens}</Text>
+            </View>
+          </View>
+
+          <View style={styles.configItem}>
+            <View style={styles.configInfo}>
+              <Text style={styles.configLabel}>Días desde Premium</Text>
+              <Text style={styles.configDescription}>{reviewStats.daysSincePremium ?? 'No Premium'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.configItem}>
+            <View style={styles.configInfo}>
+              <Text style={styles.configLabel}>Última solicitud</Text>
+              <Text style={styles.configDescription}>
+                {reviewStats.lastRequestDate ? new Date(reviewStats.lastRequestDate).toLocaleDateString() : 'Nunca'}
+              </Text>
+            </View>
+          </View>
+
+          <Button
+            title="🔄 Resetear Sistema de Reseñas"
+            onPress={async () => {
+              Alert.alert(
+                'Confirmar Reset',
+                '¿Resetear todas las estadísticas de reseñas? (Solo para testing)',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  {
+                    text: 'Resetear',
+                    style: 'destructive',
+                    onPress: async () => {
+                      await ReviewService.resetAll();
+                      await loadReviewStats();
+                      Alert.alert('✅', 'Sistema de reseñas reseteado');
+                    }
+                  }
+                ]
+              );
+            }}
+            variant="outline"
+            size="small"
+            style={{ marginTop: 12 }}
+          />
+
+          <Button
+            title="⭐ Forzar Solicitud de Reseña (Testing)"
+            onPress={async () => {
+              const success = await ReviewService.requestReview('usage_milestone');
+              Alert.alert(
+                success ? '✅ Reseña Solicitada' : '❌ No se pudo solicitar',
+                success 
+                  ? 'Deberías ver el prompt nativo de iOS' 
+                  : 'Revisa los logs en consola para ver por qué no se mostró'
+              );
+              await loadReviewStats();
+            }}
+            variant="outline"
+            size="small"
+            style={{ marginTop: 8 }}
+          />
+        </Card>
+      )}
+
       <View style={styles.bottomSpacing} />
       
       {/* Modal de Perfil de Usuario */}
@@ -237,6 +361,7 @@ export function ConfiguracionScreen() {
         onClose={contextualPaywall.hidePaywall}
         packages={contextualPaywall.packages}
         loading={contextualPaywall.loading}
+        error={contextualPaywall.error}
         onSelect={(pkg) => {
           // Convertir PurchasesPackage a PricingPlan para handleSubscribe
           const plan = {
@@ -251,6 +376,7 @@ export function ConfiguracionScreen() {
         }}
         onRestore={contextualPaywall.handleRestore}
         onStartTrial={contextualPaywall.handleStartTrial}
+        onRetry={contextualPaywall.handleRetry}
         context={contextualPaywall.context || {
           title: '',
           message: '',
@@ -385,5 +511,10 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 32,
+  },
+  debugCard: {
+    backgroundColor: '#fff3cd',
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107',
   },
 });

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, Alert } from 'react-na
 import { Button } from '../ui';
 import { useExport } from '../../hooks/useExport';
 import { ReportData } from '../../services/exportService';
+import { ReviewService } from '../../services/reviewService';
 
 interface ExportModalProps {
   visible: boolean;
@@ -29,6 +30,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       console.log('Exportando a PDF...');
       await exportToPDF(reportData);
       console.log('Exportación completada, cerrando modal...');
+      
+      // Trigger de reseña después de exportar reporte exitosamente
+      await ReviewService.triggerOnReportExported();
+      
       onClose();
     } catch (error) {
       console.error('Export error:', error);

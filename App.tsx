@@ -9,6 +9,7 @@ import { PurchasesService } from './src/services/purchases';
 import { AutoBackupService } from './src/services/autoBackup';
 import { AnalyticsService } from './src/services/analytics';
 import { userService } from './src/services/userService';
+import { ReviewService } from './src/services/reviewService';
 import Constants from 'expo-constants';
 
 function AppContent() {
@@ -46,6 +47,10 @@ function AppContent() {
         // Inicializar backup automático
         await AutoBackupService.initialize();
         console.log('✅ Backup automático inicializado');
+
+        // Trackear apertura de app para sistema de reseñas
+        await ReviewService.trackAppOpen();
+        console.log('✅ Apertura de app trackeada');
       } catch (error) {
         console.error('❌ Error al inicializar servicios:', error);
       }

@@ -655,9 +655,11 @@ export function ReportesScreen() {
         onClose={contextualPaywall.hidePaywall}
         packages={contextualPaywall.packages}
         loading={contextualPaywall.loading}
+        error={contextualPaywall.error}
         onSelect={contextualPaywall.handleSubscribe}
         onRestore={contextualPaywall.handleRestore}
         onStartTrial={contextualPaywall.handleStartTrial}
+        onRetry={contextualPaywall.handleRetry}
         context={contextualPaywall.context || {
           title: '',
           message: '',

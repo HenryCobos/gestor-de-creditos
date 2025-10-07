@@ -5,6 +5,7 @@ import { TrialNotificationService } from '../services/trialNotifications';
 import { AnalyticsService } from '../services/analytics';
 import { userService } from '../services/userService';
 import { DevToolsService } from '../services/devTools';
+import { ReviewService } from '../services/reviewService';
 
 interface UsePremiumState {
   isPremium: boolean;
@@ -62,15 +63,35 @@ export function usePremium() {
   // Función para actualizar el estado premium
   const updatePremiumState = useCallback(async () => {
     try {
-      const info = await PurchasesService.getCustomerInfo();
-      const isPro = info.entitlements.active["pro"] != null;
+      console.log('🔄 Actualizando estado premium con sincronización forzada...');
+      
+      // Primero intentar con sincronización forzada
+      let info;
+      try {
+        info = await PurchasesService.forceSyncWithApple();
+        console.log('✅ Sincronización forzada exitosa');
+      } catch (syncError) {
+        console.log('⚠️ Sincronización forzada falló, usando método normal');
+        info = await PurchasesService.getCustomerInfo();
+      }
+      
+      const entitlements = info?.entitlements?.active ?? {};
+      const isPro = entitlements["pro"] != null;
+      
+      console.log('📊 Estado premium detectado:', { 
+        isPro, 
+        entitlements: Object.keys(entitlements),
+        activeSubscriptions: info?.activeSubscriptions || []
+      });
+      
       setState((s) => {
-        // Solo actualizar si el estado cambió
-        if (s.isPremium !== isPro) {
-          console.log('🔄 Estado premium actualizado:', { isPro, entitlements: Object.keys(info.entitlements.active) });
-          return { ...s, isPremium: isPro, customerInfo: info };
-        }
-        return s;
+        // Siempre actualizar el estado, incluso si no cambió
+        console.log('🔄 Estado premium actualizado:', { 
+          anterior: s.isPremium, 
+          nuevo: isPro,
+          cambió: s.isPremium !== isPro 
+        });
+        return { ...s, isPremium: isPro, customerInfo: info ?? null };
       });
     } catch (error) {
       console.error('Error actualizando estado premium:', error);
@@ -127,6 +148,12 @@ export function usePremium() {
         const offering = await PurchasesService.getOfferings();
         const pkgs = offering?.availablePackages ?? [];
         console.log('📦 Paquetes obtenidos:', pkgs.length);
+        console.log('📦 Detalles de paquetes:', pkgs.map((pkg: any) => ({
+          identifier: pkg.identifier,
+          packageType: pkg.packageType,
+          price: pkg.product?.priceString,
+          title: pkg.product?.title
+        })));
         setPackages(pkgs);
         setState((s) => ({ ...s, offeringsLoaded: true }));
         console.log('✅ usePremium inicializado correctamente');
@@ -140,6 +167,20 @@ export function usePremium() {
     })();
   }, [updatePremiumState]);
 
+  // Permitir recargar explícitamente las ofertas (para botón Reintentar)
+  const reloadOfferings = useCallback(async () => {
+    try {
+      setState((s) => ({ ...s, loading: true }));
+      const offering = await PurchasesService.getOfferings();
+      const pkgs = offering?.availablePackages ?? [];
+      setPackages(pkgs);
+    } catch (e: any) {
+      setState((s) => ({ ...s, error: e?.message ?? 'Error recargando compras' }));
+    } finally {
+      setState((s) => ({ ...s, loading: false }));
+    }
+  }, []);
+
   // Listener para actualizar estado premium cuando cambie
   useEffect(() => {
     const interval = setInterval(() => {
@@ -148,6 +189,23 @@ export function usePremium() {
 
     return () => clearInterval(interval);
   }, [updatePremiumState]);
+
+  // Verificar milestone de Premium periódicamente (una vez al día)
+  useEffect(() => {
+    const checkPremiumMilestone = async () => {
+      if (state.isPremium) {
+        await ReviewService.triggerOnPremiumMilestone();
+      }
+    };
+
+    // Verificar al montar el componente
+    checkPremiumMilestone();
+
+    // Verificar cada 24 horas
+    const interval = setInterval(checkPremiumMilestone, 24 * 60 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [state.isPremium]);
 
   const subscribe = useCallback(async (pkg: any) => {
     console.log('🛒 subscribe llamado con:', pkg);
@@ -168,10 +226,11 @@ export function usePremium() {
       console.log('🛒 Iniciando suscripción con paquete:', pkg.identifier || pkg.id);
       
       const info = await PurchasesService.purchasePackage(pkg);
-      const isPro = info.entitlements.active["pro"] != null;
-      console.log('🛒 Resultado de compra:', { isPro, entitlements: Object.keys(info.entitlements.active) });
+      const entitlements = info?.entitlements?.active ?? {};
+      const isPro = entitlements["pro"] != null;
+      console.log('🛒 Resultado de compra:', { isPro, entitlements: Object.keys(entitlements) });
       
-      setState((s) => ({ ...s, isPremium: isPro, customerInfo: info }));
+      setState((s) => ({ ...s, isPremium: isPro, customerInfo: info ?? null }));
       
       // Actualizar estado premium inmediatamente
       await updatePremiumState();
@@ -179,14 +238,19 @@ export function usePremium() {
       // Trackear conversión a premium
       if (isPro) {
         await AnalyticsService.trackPremiumConverted(pkg.identifier || pkg.id, pkg.product?.price || pkg.price);
+        
+        // Trackear para sistema de reseñas
+        await ReviewService.trackPremiumSubscribed();
+        
         console.log('✅ Usuario convertido a Premium');
       }
       
       return { success: true } as const;
     } catch (e: any) {
       console.error('❌ Error en suscripción:', e);
-      setState((s) => ({ ...s, error: e?.message ?? 'No se pudo completar la compra' }));
-      return { success: false, error: e } as const;
+      const errorMessage = e?.message ?? 'No se pudo completar la compra';
+      setState((s) => ({ ...s, error: errorMessage }));
+      return { success: false, error: { message: errorMessage } } as const;
     } finally {
       clearTimeout(timeoutId);
       console.log('🏁 Finalizando suscripción - reseteando loading');
@@ -195,17 +259,61 @@ export function usePremium() {
   }, [updatePremiumState]);
 
   const restore = useCallback(async () => {
+    console.log('🔄 Iniciando restauración ULTRA-AGRESIVA en usePremium...');
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
-      const info = await PurchasesService.restorePurchases();
-      const isPro = info.entitlements.active["pro"] != null;
-      setState((s) => ({ ...s, isPremium: isPro, customerInfo: info }));
+      // Usar la nueva función de sincronización forzada
+      console.log('🔄 Usando sincronización forzada con Apple...');
+      const info = await PurchasesService.forceSyncWithApple();
       
-      // Actualizar estado premium inmediatamente
+      const entitlements = info?.entitlements?.active ?? {};
+      const isPro = entitlements["pro"] != null;
+      
+      console.log('🔄 Estado del cliente después de sincronización forzada:', { 
+        isPro, 
+        entitlements: Object.keys(entitlements),
+        activeSubscriptions: info?.activeSubscriptions || []
+      });
+      
+      // Forzar actualización del estado
+      setState((s) => ({ 
+        ...s, 
+        isPremium: isPro, 
+        customerInfo: info ?? null,
+        loading: false
+      }));
+      
+      // Actualizar estado premium una vez más
+      console.log('🔄 Actualizando estado premium final...');
       await updatePremiumState();
       
-      return { success: true } as const;
+      // Verificar una vez más después de la actualización
+      const finalInfo = await PurchasesService.getCustomerInfo();
+      const finalEntitlements = finalInfo?.entitlements?.active ?? {};
+      const finalIsPro = finalEntitlements["pro"] != null;
+      
+      console.log('🔄 Verificación final:', { 
+        finalIsPro, 
+        finalEntitlements: Object.keys(finalEntitlements)
+      });
+      
+      // Actualizar estado final
+      setState((s) => ({ 
+        ...s, 
+        isPremium: finalIsPro, 
+        customerInfo: finalInfo ?? null
+      }));
+      
+      // Solo devolver éxito si realmente se encontró una suscripción
+      if (finalIsPro) {
+        console.log('✅ Restauración exitosa - Premium activado');
+        return { success: true } as const;
+      } else {
+        console.log('ℹ️ No se encontraron suscripciones activas');
+        return { success: false, error: { message: 'No se encontraron compras para restaurar' } } as const;
+      }
     } catch (e: any) {
+      console.error('❌ Error en restauración:', e);
       setState((s) => ({ ...s, error: e?.message ?? 'No se pudo restaurar' }));
       return { success: false, error: e } as const;
     } finally {
@@ -261,13 +369,14 @@ export function usePremium() {
       
       // Iniciar compra del paquete con trial gratuito
       const info = await PurchasesService.purchasePackage(trialPackage);
-      const isPro = info.entitlements.active["pro"] != null;
-      console.log('🎁 Resultado de trial:', { isPro, entitlements: Object.keys(info.entitlements.active) });
+      const entitlements = info?.entitlements?.active ?? {};
+      const isPro = entitlements["pro"] != null;
+      console.log('🎁 Resultado de trial:', { isPro, entitlements: Object.keys(entitlements) });
       
       setState((s) => ({ 
         ...s, 
         isPremium: isPro, 
-        customerInfo: info,
+        customerInfo: info ?? null,
         subscriptionStatus: isPro ? 'trial' : 'none',
         trialDaysRemaining: isPro ? 3 : 0,
         canStartTrial: !isPro
@@ -312,6 +421,8 @@ export function usePremium() {
     subscribe,
     restore,
     startTrial,
+    updatePremiumState,
+    reloadOfferings,
   };
 }
 

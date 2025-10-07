@@ -1,0 +1,9 @@
+# Redirects para Netlify
+# Asegurar que app-ads.txt sea accesible
+/app-ads.txt  /app-ads.txt  200
+
+# Redirecciones para documentos legales
+/privacy      /POLITICA_PRIVACIDAD.md    200
+/terms        /TERMINOS_SERVICIO.md      200
+/support      /support.html              200
+/eula         /eula.html                 200

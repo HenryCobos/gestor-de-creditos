@@ -1,0 +1,106 @@
+===========================================
+  DESCRIPCIÓN PARA APP STORE CONNECT
+===========================================
+
+🔷 GESTOR DE CRÉDITOS - Administra tu Cartera de Préstamos
+
+La aplicación definitiva para gestionar préstamos, clientes y cobros de manera profesional y eficiente. Perfecta para prestamistas, microfinanzas, cooperativas de crédito y gestión de créditos personales.
+
+📊 FUNCIONES PRINCIPALES
+
+✓ Gestión Completa de Clientes
+• Registro detallado de clientes con contactos
+• Historial completo de préstamos por cliente
+• Búsqueda rápida y filtros avanzados
+• Organización profesional de tu cartera
+
+✓ Administración de Préstamos
+• 5 tipos de cálculo de interés (simple, compuesto, francés, alemán, americano)
+• Cronogramas automáticos de pago
+• Seguimiento de cuotas y pagos
+• Registro de pagos parciales y adelantos
+• Estados del préstamo en tiempo real
+
+✓ Control de Cobros
+• Calendario de vencimientos
+• Recordatorios automáticos de pago
+• Seguimiento de cuotas pendientes y vencidas
+• Notificaciones personalizables
+• Vista de cobros del día/semana/mes
+
+✓ Reportes y Análisis
+• Dashboard con estadísticas en tiempo real
+• Reportes mensuales y anuales
+• Análisis de rentabilidad
+• Gráficos de cartera vencida
+• Exportación de reportes en PDF (Premium)
+
+✓ Seguridad y Respaldos
+• Almacenamiento 100% local en tu dispositivo
+• Privacidad total - sin envío de datos a servidores
+• Respaldo y restauración de datos
+• Protección de información sensible
+
+💎 VERSIÓN PREMIUM
+
+Desbloquea todo el potencial con nuestras suscripciones:
+
+• Plan Mensual: $9.99 USD/mes
+• Plan Anual: $59.99 USD/año (ahorra 50%)
+
+Beneficios Premium:
+✓ Clientes y préstamos ilimitados
+✓ Exportación ilimitada de reportes PDF
+✓ Reportes avanzados con análisis detallado
+✓ Notificaciones personalizadas
+✓ Sin límites de funcionalidades
+✓ Respaldos automáticos mejorados
+
+🎯 IDEAL PARA:
+
+• Prestamistas independientes
+• Microfinancieras
+• Cooperativas de crédito
+• Gestores de crédito personal
+• Pequeños negocios de préstamos
+• Administradores financieros
+
+🔒 PRIVACIDAD Y SEGURIDAD
+
+Tu privacidad es nuestra prioridad. Todos tus datos se almacenan únicamente en tu dispositivo. No recopilamos ni compartimos información personal o financiera.
+
+📱 CARACTERÍSTICAS TÉCNICAS
+
+• Interfaz intuitiva y moderna
+• Diseño optimizado para iPhone
+• Funciona sin conexión a internet
+• Cálculos precisos y automáticos
+• Actualizaciones regulares
+• Soporte técnico en español
+
+🌟 LO QUE DICEN NUESTROS USUARIOS
+
+Herramienta esencial para gestionar préstamos de manera profesional. Ahorra tiempo, evita errores y mantén tu negocio organizado.
+
+📞 SOPORTE
+
+¿Necesitas ayuda? Contáctanos:
+Email: Apper2025@icloud.com
+Centro de Soporte: https://gestordecreditos.netlify.app/support.html
+
+📄 INFORMACIÓN LEGAL
+
+Terms of Use (EULA): https://gestordecreditos.netlify.app/eula.html
+Privacy Policy: https://gestordecreditos.netlify.app/POLITICA_PRIVACIDAD.md
+
+💳 SUSCRIPCIONES
+
+• Las suscripciones se renuevan automáticamente a menos que canceles 24 horas antes del fin del período
+• El pago se carga a tu cuenta de iTunes al confirmar la compra
+• Gestiona tus suscripciones en Ajustes > Apple ID > Suscripciones
+• Prueba gratuita de 3 días disponible para nuevos usuarios
+• Sin reembolsos por períodos no utilizados
+
+Descarga ahora y transforma la manera en que gestionas tus préstamos.
+
+===========================================

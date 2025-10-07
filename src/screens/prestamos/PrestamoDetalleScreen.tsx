@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext';
 import { Card, Button, LoadingSpinner, EmptyState, Badge, CuotaCard } from '../../components';
 import { formatearFecha, formatearFechaTexto, getEstadoFecha } from '../../utils/dateUtils';
 import { CalculationService } from '../../services/calculations';
+import { ReviewService } from '../../services/reviewService';
 
 type RouteProps = RouteProp<RootStackParamList, 'PrestamoDetalle'>;
 
@@ -99,7 +100,29 @@ export function PrestamoDetalleScreen() {
         fechaPago: new Date().toISOString().split('T')[0],
         notas: 'Pago registrado desde detalle de préstamo'
       });
-      Alert.alert('Éxito', 'Cuota marcada como pagada');
+      
+      // Verificar si el préstamo se completó
+      const cuotasActualizadas = obtenerCuotasPorPrestamo(prestamoId);
+      const todasPagadas = cuotasActualizadas.every(c => c.estado === 'pagada');
+      
+      if (todasPagadas) {
+        // ¡Préstamo completado! - Momento perfecto para pedir reseña
+        Alert.alert(
+          '¡Felicitaciones! 🎉', 
+          'Préstamo completado exitosamente',
+          [{ 
+            text: 'Genial', 
+            onPress: async () => {
+              // Trigger de reseña después de completar préstamo (prioridad alta)
+              await ReviewService.triggerOnLoanCompleted();
+            }
+          }]
+        );
+      } else {
+        Alert.alert('Éxito', 'Cuota marcada como pagada');
+        // Trigger de milestone de pagos
+        await ReviewService.triggerOnPaymentMilestone();
+      }
     } catch (error) {
       Alert.alert('Error', 'No se pudo marcar la cuota como pagada');
       console.error('Error al marcar cuota como pagada:', error);

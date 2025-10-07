@@ -261,6 +261,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         onClose={contextualPaywall.hidePaywall}
         packages={contextualPaywall.packages}
         loading={contextualPaywall.loading}
+        error={contextualPaywall.error}
         onSelect={(pkg) => {
           // Convertir PurchasesPackage a PricingPlan para handleSubscribe
           const plan = {
@@ -275,6 +276,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         }}
         onRestore={contextualPaywall.handleRestore}
         onStartTrial={contextualPaywall.handleStartTrial}
+        onRetry={contextualPaywall.handleRetry}
         context={contextualPaywall.context || {
           title: '',
           message: '',

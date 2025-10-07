@@ -12,18 +12,22 @@ copy "netlify.toml" "..\gestor-creditos-website\"
 copy "_redirects" "..\gestor-creditos-website\"
 copy "POLITICA_PRIVACIDAD.md" "..\gestor-creditos-website\"
 copy "TERMINOS_SERVICIO.md" "..\gestor-creditos-website\"
+copy "EULA.md" "..\gestor-creditos-website\"
+copy "eula.html" "..\gestor-creditos-website\"
 copy "verificar-sitio.html" "..\gestor-creditos-website\"
 
 echo ✅ Archivos copiados a ..\gestor-creditos-website\
 echo.
 echo 📋 Archivos copiados:
-echo - app-ads.txt (CRÍTICO para AdMob)
+echo - app-ads.txt
 echo - index.html (Página principal)
 echo - support.html (Soporte)
 echo - netlify.toml (Configuración)
 echo - _redirects (Redirecciones)
 echo - POLITICA_PRIVACIDAD.md
 echo - TERMINOS_SERVICIO.md
+echo - EULA.md
+echo - eula.html (EULA en HTML - REQUERIDO por Apple)
 echo - verificar-sitio.html
 echo.
 echo 🎯 Siguiente paso: 

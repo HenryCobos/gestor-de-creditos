@@ -1,8 +1,8 @@
 # END USER LICENSE AGREEMENT (EULA)
 ## Gestor de Créditos
 
-**Effective Date:** September 30, 2025  
-**Version:** 1.0
+**Effective Date:** October 5, 2025  
+**Version:** 1.3.0
 
 ### IMPORTANT - READ CAREFULLY
 
