@@ -343,6 +343,16 @@ export function ConfiguracionScreen() {
             size="small"
             style={{ marginTop: 8 }}
           />
+
+          <Button
+            title="💰 Ver Paywall (Forzar)"
+            onPress={() => {
+              contextualPaywall.showPaywall('reportes_avanzados');
+            }}
+            variant="outline"
+            size="small"
+            style={{ marginTop: 8 }}
+          />
         </Card>
       )}
 
