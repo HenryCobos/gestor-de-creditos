@@ -256,11 +256,15 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                       </View>
                     )}
                     <View style={styles.packageContent}>
-                      <Text style={styles.packageTitle}>{pkg.product.title || (pkg.packageType === 'ANNUAL' ? 'Anual' : 'Mensual')}</Text>
+                      <Text style={styles.packageTitle}>
+                        {pkg.packageType === 'ANNUAL' ? 'Premium Anual' : 'Premium Mensual'}
+                      </Text>
                       <View style={styles.priceContainer}>
-                        <Text style={styles.packagePrice}>{pkg.product.priceString || '—'}</Text>
+                        <Text style={styles.packagePrice}>
+                          {pkg.product?.priceString || `$${pkg.product?.price?.toFixed(2) || '0.00'}`}
+                        </Text>
                         <Text style={styles.pricePeriod}>
-                          {pkg.packageType === 'ANNUAL' ? 'por año' : 'por mes'}
+                          {pkg.packageType === 'ANNUAL' ? ' por año' : ' por mes'}
                         </Text>
                         {pkg.packageType === 'ANNUAL' && pkg.product.priceString && pkg.product.price && (
                           <Text style={styles.pricePerMonth}>

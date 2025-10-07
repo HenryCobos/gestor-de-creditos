@@ -148,12 +148,27 @@ export function usePremium() {
         const offering = await PurchasesService.getOfferings();
         const pkgs = offering?.availablePackages ?? [];
         console.log('📦 Paquetes obtenidos:', pkgs.length);
-        console.log('📦 Detalles de paquetes:', pkgs.map((pkg: any) => ({
+        console.log('📦 Detalles COMPLETOS de paquetes:', JSON.stringify(pkgs.map((pkg: any) => ({
           identifier: pkg.identifier,
           packageType: pkg.packageType,
-          price: pkg.product?.priceString,
-          title: pkg.product?.title
-        })));
+          product: {
+            priceString: pkg.product?.priceString,
+            price: pkg.product?.price,
+            title: pkg.product?.title,
+            description: pkg.product?.description,
+            productIdentifier: pkg.product?.productIdentifier,
+            currency: pkg.product?.currencyCode
+          }
+        })), null, 2));
+        
+        // Validar que los paquetes tengan información completa
+        if (pkgs.length > 0) {
+          const invalidPackages = pkgs.filter((pkg: any) => !pkg.product?.priceString && !pkg.product?.price);
+          if (invalidPackages.length > 0) {
+            console.warn('⚠️ Algunos paquetes no tienen información de precio:', invalidPackages.length);
+          }
+        }
+        
         setPackages(pkgs);
         setState((s) => ({ ...s, offeringsLoaded: true }));
         console.log('✅ usePremium inicializado correctamente');

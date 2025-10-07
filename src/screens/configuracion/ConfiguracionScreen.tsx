@@ -32,9 +32,8 @@ export function ConfiguracionScreen() {
 
   useEffect(() => {
     verificarPermisos();
-    if (__DEV__) {
-      loadReviewStats();
-    }
+    // Cargar stats también en TestFlight para debugging
+    loadReviewStats();
   }, []);
 
   const loadReviewStats = async () => {
@@ -233,8 +232,8 @@ export function ConfiguracionScreen() {
         />
       </Card>
 
-      {/* Debug: Sistema de Reseñas - Solo en Desarrollo */}
-      {__DEV__ && reviewStats && (
+      {/* Debug: Sistema de Reseñas - Visible también en TestFlight */}
+      {reviewStats && (
         <Card style={StyleSheet.flatten([styles.card, styles.debugCard])}>
           <Text style={styles.sectionTitle}>🔍 Debug: Sistema de Reseñas</Text>
           
