@@ -106,19 +106,22 @@ export class PurchasesService {
       isInitialized: this.initialized
     });
     
-    // En TestFlight, intentar RevenueCat primero, usar respaldo solo si falla
+    // En TestFlight y Producción, SOLO usar RevenueCat real
     if (isTestFlight) {
-      console.log('📱 TESTFLIGHT: Intentando cargar productos desde RevenueCat...');
-      console.log('🔧 Si falla, usaremos productos de respaldo para permitir compras');
+      console.log('📱 TESTFLIGHT/PRODUCCIÓN: Cargando SOLO productos REALES desde RevenueCat');
+      console.log('⚠️ NO usaremos productos simulados/fallback');
     }
     
     if (!mod) {
-      // Fallback solo para Expo Go
-      console.log('📦 RevenueCat no disponible - modo Expo Go');
+      // Fallback solo para Expo Go y desarrollo
+      console.log('📦 RevenueCat no disponible');
       if (isLocalDevelopment || isExpoGo) {
+        console.log('🎭 Modo desarrollo - usando simulación');
         this.usingSimulatedOfferings = true;
         return this.getSimulatedOfferings();
       }
+      // En producción/TestFlight sin mod, devolver vacío (no simular)
+      console.error('❌ PRODUCCIÓN: RevenueCat no disponible - NO hay productos');
       return { availablePackages: [] };
     }
     
@@ -167,20 +170,18 @@ export class PurchasesService {
     } catch (error: any) {
       console.error('❌ Error obteniendo ofertas:', error.message);
       console.error('❌ Stack trace:', error.stack);
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error completo:', JSON.stringify(error, null, 2));
       
-      // En TestFlight, usar productos de respaldo cuando RevenueCat falla
+      // En TestFlight/Producción, NUNCA usar productos de respaldo
       if (isTestFlight) {
-        console.log('📱 TESTFLIGHT: Error obteniendo productos reales, usando productos de respaldo');
-        console.log('🔧 Error específico:', error.message);
-        console.log('🔧 Tipo de error:', error.code || 'Sin código');
-        console.log('🔧 Verifica que:');
-        console.log('   - Los productos estén aprobados en App Store Connect');
-        console.log('   - La oferta esté marcada como "Current" en RevenueCat');
-        console.log('   - Los productos estén asociados a la oferta');
-        console.log('   - La API key de RevenueCat sea correcta');
-        console.log('🔄 Usando productos de respaldo para permitir compras');
-        // Para compras REALES en TestFlight: no usar paquetes de respaldo ni simulación.
-        // Devolvemos lista vacía para que la UI muestre el aviso y no ofrezca botones inválidos.
+        console.error('📱 TESTFLIGHT/PRODUCCIÓN: Error cargando productos REALES');
+        console.error('🔧 Verifica que:');
+        console.error('   - Los productos estén aprobados en App Store Connect');
+        console.error('   - La oferta esté marcada como "Current" en RevenueCat');
+        console.error('   - Los productos estén asociados a la oferta');
+        console.error('   - La API key de RevenueCat sea correcta para producción');
+        console.error('❌ NO usaremos productos simulados - lista vacía');
         this.usingSimulatedOfferings = false;
         return { availablePackages: [] };
       }
@@ -191,7 +192,7 @@ export class PurchasesService {
         this.usingSimulatedOfferings = true;
         return this.getSimulatedOfferings();
       } else {
-        console.error('❌ PRODUCCIÓN: Error - usuarios verán mensaje');
+        console.error('❌ PRODUCCIÓN: Error crítico - NO hay productos disponibles');
         this.usingSimulatedOfferings = false;
         return { availablePackages: [] };
       }
