@@ -10,6 +10,7 @@ interface PurchasesPackage {
     priceString: string;
     price: number;
     title: string;
+    currencyCode?: string;
   };
 }
 
