@@ -261,25 +261,16 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                       </Text>
                       <View style={styles.priceContainer}>
                         <Text style={styles.packagePrice}>
-                          {pkg.product?.priceString || `$${pkg.product?.price?.toFixed(2) || '0.00'}`}
+                          {pkg.product?.price && pkg.product?.currencyCode
+                            ? formatPrice(pkg.product.price, pkg.product.currencyCode)
+                            : pkg.product?.priceString || `$${pkg.product?.price?.toFixed(2) || '0.00'}`}
                         </Text>
                         <Text style={styles.pricePeriod}>
                           {pkg.packageType === 'ANNUAL' ? ' por año' : ' por mes'}
                         </Text>
-                        {pkg.packageType === 'ANNUAL' && pkg.product.priceString && pkg.product.price && (
+                        {pkg.packageType === 'ANNUAL' && pkg.product.price && pkg.product.currencyCode && (
                           <Text style={styles.pricePerMonth}>
-                            /mes ({(() => {
-                              // Extraer símbolo de moneda del priceString
-                              const priceStr = pkg.product.priceString;
-                              const currencySymbol = priceStr.replace(/[\d.,\s]+/g, '').trim();
-                              const monthlyPrice = (pkg.product.price / 12).toFixed(2);
-                              // Mantener el formato original (símbolo antes o después)
-                              if (priceStr.indexOf(currencySymbol) < priceStr.search(/\d/)) {
-                                return `${currencySymbol}${monthlyPrice}`;
-                              } else {
-                                return `${monthlyPrice}${currencySymbol}`;
-                              }
-                            })()})
+                            /mes ({formatPrice(pkg.product.price / 12, pkg.product.currencyCode)})
                           </Text>
                         )}
                       </View>
@@ -289,24 +280,15 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                       <Text style={styles.subscriptionInfo}>
                         Suscripción auto-renovable {pkg.packageType === 'ANNUAL' ? 'anual' : 'mensual'}
                       </Text>
-                      {pkg.packageType === 'ANNUAL' && pkg.product.price && pkg.product.priceString && (
+                      {pkg.packageType === 'ANNUAL' && pkg.product.price && pkg.product.currencyCode && (
                         <Text style={styles.savingsText}>
                           {(() => {
                             // Calcular ahorro: (precio mensual * 12) - precio anual
-                            // Para obtener el precio mensual, necesitamos buscar el paquete mensual
                             const monthlyPkg = packages.find(p => p.packageType === 'MONTHLY');
                             if (monthlyPkg && monthlyPkg.product && monthlyPkg.product.price) {
                               const savings = (monthlyPkg.product.price * 12) - pkg.product.price;
                               if (savings > 0) {
-                                const priceStr = pkg.product.priceString;
-                                const currencySymbol = priceStr.replace(/[\d.,\s]+/g, '').trim();
-                                const savingsStr = savings.toFixed(2);
-                                // Mantener el formato original
-                                if (priceStr.indexOf(currencySymbol) < priceStr.search(/\d/)) {
-                                  return `Ahorras ${currencySymbol}${savingsStr} al año`;
-                                } else {
-                                  return `Ahorras ${savingsStr}${currencySymbol} al año`;
-                                }
+                                return `Ahorras ${formatPrice(savings, pkg.product.currencyCode)} al año`;
                               }
                             }
                             return 'Ahorra con el plan anual';

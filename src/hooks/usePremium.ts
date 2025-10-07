@@ -148,18 +148,28 @@ export function usePremium() {
         const offering = await PurchasesService.getOfferings();
         const pkgs = offering?.availablePackages ?? [];
         console.log('📦 Paquetes obtenidos:', pkgs.length);
-        console.log('📦 Detalles COMPLETOS de paquetes:', JSON.stringify(pkgs.map((pkg: any) => ({
-          identifier: pkg.identifier,
-          packageType: pkg.packageType,
-          product: {
-            priceString: pkg.product?.priceString,
-            price: pkg.product?.price,
-            title: pkg.product?.title,
-            description: pkg.product?.description,
-            productIdentifier: pkg.product?.productIdentifier,
-            currency: pkg.product?.currencyCode
-          }
-        })), null, 2));
+      console.log('📦 Detalles COMPLETOS de paquetes:', JSON.stringify(pkgs.map((pkg: any) => ({
+        identifier: pkg.identifier,
+        packageType: pkg.packageType,
+        product: {
+          priceString: pkg.product?.priceString,
+          price: pkg.product?.price,
+          title: pkg.product?.title,
+          description: pkg.product?.description,
+          productIdentifier: pkg.product?.productIdentifier,
+          currencyCode: pkg.product?.currencyCode,
+          // Todos los campos posibles para debug
+          allKeys: Object.keys(pkg.product || {})
+        }
+      })), null, 2));
+      
+      console.log('💰 ANÁLISIS DE PRECIOS:');
+      pkgs.forEach((pkg: any) => {
+        console.log(`  - ${pkg.packageType}:`);
+        console.log(`    priceString: "${pkg.product?.priceString}"`);
+        console.log(`    price: ${pkg.product?.price}`);
+        console.log(`    currencyCode: "${pkg.product?.currencyCode}"`);
+      });
         
         // Validar que los paquetes tengan información completa
         if (pkgs.length > 0) {
