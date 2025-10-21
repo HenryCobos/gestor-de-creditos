@@ -263,13 +263,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         loading={contextualPaywall.loading}
         error={contextualPaywall.error}
         onSelect={(pkg) => {
-          // Convertir PurchasesPackage a PricingPlan para handleSubscribe
+          // Convertir PayPalProduct a PricingPlan para handleSubscribe
           const plan = {
-            id: pkg.identifier,
-            name: pkg.packageType === 'MONTHLY' ? 'Mensual' : 'Anual',
-            price: pkg.product.price,
-            period: pkg.packageType === 'MONTHLY' ? 'monthly' as const : 'yearly' as const,
-            revenueCatId: pkg.identifier,
+            id: pkg.id,
+            name: pkg.type === 'monthly' ? 'Mensual' : 'Anual',
+            price: pkg.price,
+            period: pkg.type === 'monthly' ? 'monthly' as const : 'yearly' as const,
+            revenueCatId: pkg.id,
             features: [], // Características del plan
           };
           contextualPaywall.handleSubscribe(plan);
@@ -283,6 +283,9 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
           icon: '',
           featureName: '',
         }}
+        pendingPayment={contextualPaywall.pendingPayment}
+        onCompletePayment={contextualPaywall.onCompletePayment}
+        onCancelPayment={contextualPaywall.onCancelPayment}
       />
     </View>
   );

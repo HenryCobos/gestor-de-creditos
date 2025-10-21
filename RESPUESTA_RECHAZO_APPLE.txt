@@ -1,0 +1,44 @@
+Dear App Review Team,
+
+Thank you for your feedback on submission 4cef7ed5-2317-43d1-b5df-1fbc8822fae7.
+
+We have carefully reviewed your feedback and made all necessary corrections. This new build (156) addresses both issues:
+
+GUIDELINE 3.1.2 - SUBSCRIPTIONS - FREE TRIAL DISCLOSURE:
+✅ FIXED - Our subscription flow now clearly shows:
+• Trial button text: "Start FREE 3-day trial" (duration is clear)
+• Disclosure text below button: "After the 3-day free trial period, you will be automatically charged [PRICE]/month. Cancel anytime before the trial ends to avoid charges."
+• Price displayed in user's local currency (USD, PEN, MXN, COP, etc.)
+• All information visible without additional scrolling
+
+Files updated:
+- src/components/paywall/SimplePaywall.tsx
+- src/components/paywall/ContextualPaywall.tsx
+
+GUIDELINE 4.1 - DESIGN - COPYCATS:
+✅ FIXED - App name changed to avoid any confusion:
+• Previous name: "PrestaMax - Préstamos"
+• New name: "Gestor de Créditos" (Generic "Credit Manager" in Spanish)
+
+We confirm:
+- No relationship with any third-party brands
+- Name is purely descriptive and generic
+- No trademark infringement
+
+File updated:
+- app.json (name and description)
+
+ADDITIONAL IMPROVEMENTS IN THIS BUILD:
+• Partial payment system (users can pay any amount)
+• Support for late payments without restrictions  
+• Automatic loan completion when all installments are paid
+• Bug fixes and performance improvements
+
+All changes have been tested and comply with Apple's guidelines.
+
+We appreciate your time reviewing our app and hope these corrections meet your requirements.
+
+Thank you,
+Henry Apper
+Apper2025@icloud.com
+

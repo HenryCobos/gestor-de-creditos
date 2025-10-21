@@ -103,6 +103,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ children }) => {
           icon: '',
           featureName: '',
         }}
+        pendingPayment={contextualPaywall.pendingPayment}
+        onCompletePayment={contextualPaywall.onCompletePayment}
+        onCancelPayment={contextualPaywall.onCancelPayment}
       />
     </View>
   );

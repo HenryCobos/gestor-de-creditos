@@ -1,25 +1,25 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import * as Notifications from 'expo-notifications';
 import { ConfiguracionApp } from '../types';
 
-// Carga perezosa del módulo, evitando Expo Go donde el soporte es limitado
-let Notifications: typeof import('expo-notifications') | null = null;
+// Verificar si estamos en Expo Go donde el soporte es limitado
 const isExpoGo = (Constants as any)?.appOwnership === 'expo';
 
-async function ensureModuleLoaded(): Promise<typeof import('expo-notifications') | null> {
-  if (isExpoGo) return null;
-  if (!Notifications) {
-    Notifications = await import('expo-notifications');
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-      }),
-    });
-  }
-  return Notifications;
+// Configurar el manejador de notificaciones
+if (!isExpoGo) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+}
+
+function isNotificationsAvailable(): boolean {
+  return !isExpoGo;
 }
 
 // Tipos para el servicio de notificaciones
@@ -51,17 +51,17 @@ export class NotificationService {
    */
   static async initialize(): Promise<void> {
     try {
-      const mod = await ensureModuleLoaded();
-      if (!mod) {
+      if (!isNotificationsAvailable()) {
         console.log('ℹ️ Omitiendo notificaciones en Expo Go');
         return;
       }
+      
       // Solicitar permisos
-      const { status: existingStatus } = await mod.getPermissionsAsync();
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
       if (existingStatus !== 'granted') {
-        const { status } = await mod.requestPermissionsAsync();
+        const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
@@ -72,9 +72,9 @@ export class NotificationService {
 
       // Configurar canal de notificación para iOS
       if (Platform.OS === 'ios') {
-        await mod.setNotificationChannelAsync('default', {
+        await Notifications.setNotificationChannelAsync('default', {
           name: 'default',
-          importance: (mod as any).AndroidImportance?.MAX ?? 5,
+          importance: (Notifications as any).AndroidImportance?.MAX ?? 5,
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#FF231F7C',
         });
@@ -96,14 +96,15 @@ export class NotificationService {
     trigger?: any
   ): Promise<string> {
     try {
-      const mod = await ensureModuleLoaded();
-      if (!mod) throw new Error('Notificaciones no disponibles en Expo Go');
+      if (!isNotificationsAvailable()) {
+        throw new Error('Notificaciones no disponibles en Expo Go');
+      }
       
       // Validar que title y body no sean nulos o undefined
       const safeTitle = title || 'Notificación';
       const safeBody = body || 'Mensaje de notificación';
       
-      const id = await mod.scheduleNotificationAsync({
+      const id = await Notifications.scheduleNotificationAsync({
         content: {
           title: safeTitle,
           body: safeBody,
@@ -134,9 +135,9 @@ export class NotificationService {
         return '';
       }
 
-      // Programar notificación 1 día antes
-      const mod = await ensureModuleLoaded();
-      if (!mod) throw new Error('Notificaciones no disponibles en Expo Go');
+      if (!isNotificationsAvailable()) {
+        throw new Error('Notificaciones no disponibles en Expo Go');
+      }
       
       const reminderDate = new Date(paymentDate);
       reminderDate.setDate(reminderDate.getDate() - 1);
@@ -160,9 +161,8 @@ export class NotificationService {
    */
   static async cancelNotification(notificationId: string): Promise<void> {
     try {
-      const mod = await ensureModuleLoaded();
-      if (!mod) return;
-      await mod.cancelScheduledNotificationAsync(notificationId);
+      if (!isNotificationsAvailable()) return;
+      await Notifications.cancelScheduledNotificationAsync(notificationId);
     } catch (error) {
       console.error('Error al cancelar notificación:', error);
       throw error;
@@ -174,9 +174,8 @@ export class NotificationService {
    */
   static async cancelAllNotifications(): Promise<void> {
     try {
-      const mod = await ensureModuleLoaded();
-      if (!mod) return;
-      await mod.cancelAllScheduledNotificationsAsync();
+      if (!isNotificationsAvailable()) return;
+      await Notifications.cancelAllScheduledNotificationsAsync();
     } catch (error) {
       console.error('Error al cancelar todas las notificaciones:', error);
       throw error;
@@ -188,9 +187,8 @@ export class NotificationService {
    */
   static async getScheduledNotifications(): Promise<any[]> {
     try {
-      const mod = await ensureModuleLoaded();
-      if (!mod) return [] as any;
-      return await mod.getAllScheduledNotificationsAsync();
+      if (!isNotificationsAvailable()) return [] as any;
+      return await Notifications.getAllScheduledNotificationsAsync();
     } catch (error) {
       console.error('Error al obtener notificaciones programadas:', error);
       throw error;
@@ -204,12 +202,12 @@ export class NotificationService {
     if (!configuracion.recordatoriosPago) return null;
 
     try {
-      const mod = await ensureModuleLoaded();
-      if (!mod) return null;
+      if (!isNotificationsAvailable()) return null;
+      
       // Programar para la hora configurada cada día
       const [hora, minutos] = configuracion.horaRecordatorio.split(':').map(Number);
       
-      const notificationId = await mod.scheduleNotificationAsync({
+      const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
           title: '📊 Resumen Diario - Gestor de Créditos',
           body: 'Revisa el estado de tus préstamos y cuotas pendientes',
@@ -238,15 +236,15 @@ export class NotificationService {
     data: NotificationData
   ): Promise<string | null> {
     try {
-      const mod = await ensureModuleLoaded();
-      if (!mod) return null;
-      const notificationId = await mod.scheduleNotificationAsync({
+      if (!isNotificationsAvailable()) return null;
+      
+      const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
           title: titulo,
           body: mensaje,
           data,
           sound: true,
-          priority: (mod as any).AndroidNotificationPriority?.HIGH ?? 'high',
+          priority: (Notifications as any).AndroidNotificationPriority?.HIGH ?? 'high',
         },
         trigger: null, // Inmediata
       });
@@ -264,9 +262,8 @@ export class NotificationService {
    */
   static async cancelarNotificacion(notificationId: string): Promise<void> {
     try {
-      const mod = await ensureModuleLoaded();
-      if (!mod) return;
-      await mod.cancelScheduledNotificationAsync(notificationId);
+      if (!isNotificationsAvailable()) return;
+      await Notifications.cancelScheduledNotificationAsync(notificationId);
     } catch (error) {
       console.error('Error al cancelar notificación:', error);
     }
@@ -281,9 +278,11 @@ export class NotificationService {
     status: string;
   }> {
     try {
-      const mod = await ensureModuleLoaded();
-      if (!mod) return { granted: false, canAskAgain: false, status: 'unsupported' };
-      const { status, canAskAgain } = await mod.getPermissionsAsync();
+      if (!isNotificationsAvailable()) {
+        return { granted: false, canAskAgain: false, status: 'unsupported' };
+      }
+      
+      const { status, canAskAgain } = await Notifications.getPermissionsAsync();
       return {
         granted: status === 'granted',
         canAskAgain,

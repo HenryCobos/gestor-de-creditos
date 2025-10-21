@@ -305,6 +305,40 @@ export function useContextualPaywall() {
     }
   }, [premium]);
 
+  const handleCompletePayment = useCallback(async (transactionId: string, product: any) => {
+    console.log('🎉 Pago completado desde WebView:', transactionId);
+    
+    try {
+      // Completar el pago en usePremium
+      await premium.completePaymentFromWebView(transactionId, product);
+      
+      // Cerrar el paywall después de un breve delay
+      setTimeout(() => {
+        console.log('✅ Cerrando paywall después de pago exitoso');
+        hidePaywall();
+      }, 1000);
+      
+    } catch (error: any) {
+      console.error('❌ Error completando pago desde WebView:', error);
+    }
+  }, [premium, hidePaywall]);
+
+  const handleCancelPayment = useCallback(() => {
+    console.log('❌ Pago cancelado desde WebView');
+    
+    try {
+      // Cancelar el pago en usePremium
+      premium.cancelPaymentFromWebView();
+      
+      // Cerrar el paywall
+      console.log('✅ Cerrando paywall después de cancelación');
+      hidePaywall();
+      
+    } catch (error: any) {
+      console.error('❌ Error cancelando pago desde WebView:', error);
+    }
+  }, [premium, hidePaywall]);
+
   return {
     visible,
     context,
@@ -317,5 +351,8 @@ export function useContextualPaywall() {
     loading: premium.loading,
     error: premium.error,
     packages: premium.packages,
+    pendingPayment: premium.pendingPayment,
+    onCompletePayment: handleCompletePayment,
+    onCancelPayment: handleCancelPayment,
   };
 }

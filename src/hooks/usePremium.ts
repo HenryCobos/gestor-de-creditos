@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import Constants from 'expo-constants';
-import { PurchasesService } from '../services/purchases';
+import { PayPalService, PayPalProduct } from '../services/payments';
 import { TrialNotificationService } from '../services/trialNotifications';
 import { AnalyticsService } from '../services/analytics';
 import { userService } from '../services/userService';
@@ -17,6 +17,12 @@ interface UsePremiumState {
   subscriptionStatus: 'active' | 'trial' | 'expired' | 'none';
   nextBillingDate: string | null;
   canStartTrial: boolean;
+  expiryDate?: string;
+  productType?: string;
+  pendingPayment?: {
+    product: PayPalProduct;
+    result: any;
+  };
 }
 
 export function usePremium() {
@@ -30,68 +36,46 @@ export function usePremium() {
     subscriptionStatus: 'none',
     nextBillingDate: null,
     canStartTrial: true,
+    expiryDate: undefined,
+    productType: undefined,
+    pendingPayment: undefined,
   });
-  const [packages, setPackages] = useState<any[]>([]);
+  const [packages, setPackages] = useState<PayPalProduct[]>([]);
 
   useEffect(() => {
-    const isExpoGo = (Constants as any)?.appOwnership === 'expo';
-    let sub: any;
-    
-    if (isExpoGo) return;
-    
-    // Configurar listener de forma asíncrona
+    // Inicializar PayPal service
     (async () => {
       try {
-        const mod = await import('react-native-purchases');
-        const Purchases = mod.default || mod;
-        if (Purchases && Purchases.addPurchaserInfoUpdateListener) {
-          sub = Purchases.addPurchaserInfoUpdateListener(async (info: any) => {
-            const isPro = info.entitlements.active["pro"] != null;
-            setState((s) => ({ ...s, isPremium: isPro, customerInfo: info }));
-          });
-        }
+        await PayPalService.initialize();
+        console.log('✅ PayPal service initialized in usePremium');
       } catch (error) {
-        console.log('ℹ️ RevenueCat no disponible para listener');
+        console.log('ℹ️ PayPal service not available');
       }
     })();
-    
-    return () => {
-      if (sub && sub.remove) sub.remove();
-    };
   }, []);
 
   // Función para actualizar el estado premium
   const updatePremiumState = useCallback(async () => {
     try {
-      console.log('🔄 Actualizando estado premium con sincronización forzada...');
+      console.log('🔄 Actualizando estado premium con PayPal...');
       
-      // Primero intentar con sincronización forzada
-      let info;
-      try {
-        info = await PurchasesService.forceSyncWithApple();
-        console.log('✅ Sincronización forzada exitosa');
-      } catch (syncError) {
-        console.log('⚠️ Sincronización forzada falló, usando método normal');
-        info = await PurchasesService.getCustomerInfo();
-      }
+      const premiumStatus = await PayPalService.getPremiumStatus();
       
-      const entitlements = info?.entitlements?.active ?? {};
-      const isPro = entitlements["pro"] != null;
-      
-      console.log('📊 Estado premium detectado:', { 
-        isPro, 
-        entitlements: Object.keys(entitlements),
-        activeSubscriptions: info?.activeSubscriptions || []
-      });
+      console.log('📊 Estado premium detectado:', premiumStatus);
       
       setState((s) => {
-        // Siempre actualizar el estado, incluso si no cambió
         console.log('🔄 Estado premium actualizado:', { 
           anterior: s.isPremium, 
-          nuevo: isPro,
-          cambió: s.isPremium !== isPro 
+          nuevo: premiumStatus.isPremium,
+          cambió: s.isPremium !== premiumStatus.isPremium 
         });
-        return { ...s, isPremium: isPro, customerInfo: info ?? null };
+        return { 
+          ...s, 
+          isPremium: premiumStatus.isPremium, 
+          customerInfo: premiumStatus,
+          expiryDate: premiumStatus.expiryDate,
+          productType: premiumStatus.productType
+        };
       });
     } catch (error) {
       console.error('Error actualizando estado premium:', error);
@@ -127,57 +111,35 @@ export function usePremium() {
           return;
         }
 
-        // Inicializar RevenueCat si no está inicializado
-        const isExpoGo = (Constants as any)?.appOwnership === 'expo';
-        console.log('📱 Entorno:', { isExpoGo, isDev: __DEV__ });
+        // Inicializar PayPal si no está inicializado
+        console.log('📱 Entorno:', { isDev: __DEV__ });
         
-        if (!isExpoGo) {
-          const apiKey = (Constants?.expoConfig as any)?.extra?.REVENUECAT_API_KEY || (Constants?.manifest as any)?.extra?.REVENUECAT_API_KEY;
-          console.log('🔑 API Key disponible:', !!apiKey);
-          if (apiKey && !PurchasesService.initialized) {
-            await PurchasesService.initialize(apiKey);
-            console.log('✅ RevenueCat inicializado en usePremium');
-          }
-        }
+        await PayPalService.initialize();
+        console.log('✅ PayPal inicializado en usePremium');
 
         // Cargar estado inicial
         console.log('📊 Cargando estado premium...');
         await updatePremiumState();
 
-        console.log('📦 Obteniendo ofertas...');
-        const offering = await PurchasesService.getOfferings();
-        const pkgs = offering?.availablePackages ?? [];
-        console.log('📦 Paquetes obtenidos:', pkgs.length);
-      console.log('📦 Detalles COMPLETOS de paquetes:', JSON.stringify(pkgs.map((pkg: any) => ({
-        identifier: pkg.identifier,
-        packageType: pkg.packageType,
-        product: {
-          priceString: pkg.product?.priceString,
-          price: pkg.product?.price,
-          title: pkg.product?.title,
-          description: pkg.product?.description,
-          productIdentifier: pkg.product?.productIdentifier,
-          currencyCode: pkg.product?.currencyCode,
-          // Todos los campos posibles para debug
-          allKeys: Object.keys(pkg.product || {})
-        }
-      })), null, 2));
-      
-      console.log('💰 ANÁLISIS DE PRECIOS:');
-      pkgs.forEach((pkg: any) => {
-        console.log(`  - ${pkg.packageType}:`);
-        console.log(`    priceString: "${pkg.product?.priceString}"`);
-        console.log(`    price: ${pkg.product?.price}`);
-        console.log(`    currencyCode: "${pkg.product?.currencyCode}"`);
-      });
+        console.log('📦 Obteniendo productos PayPal...');
+        const pkgs = PayPalService.getProducts();
+        console.log('📦 Productos obtenidos:', pkgs.length);
         
-        // Validar que los paquetes tengan información completa
-        if (pkgs.length > 0) {
-          const invalidPackages = pkgs.filter((pkg: any) => !pkg.product?.priceString && !pkg.product?.price);
-          if (invalidPackages.length > 0) {
-            console.warn('⚠️ Algunos paquetes no tienen información de precio:', invalidPackages.length);
-          }
-        }
+        console.log('📦 Detalles COMPLETOS de productos:', JSON.stringify(pkgs.map((pkg: PayPalProduct) => ({
+          id: pkg.id,
+          name: pkg.name,
+          price: pkg.price,
+          currency: pkg.currency,
+          type: pkg.type
+        })), null, 2));
+        
+        console.log('💰 ANÁLISIS DE PRECIOS:');
+        pkgs.forEach((pkg: PayPalProduct) => {
+          console.log(`  - ${pkg.type}:`);
+          console.log(`    name: "${pkg.name}"`);
+          console.log(`    price: ${pkg.price}`);
+          console.log(`    currency: "${pkg.currency}"`);
+        });
         
         setPackages(pkgs);
         setState((s) => ({ ...s, offeringsLoaded: true }));
@@ -196,11 +158,10 @@ export function usePremium() {
   const reloadOfferings = useCallback(async () => {
     try {
       setState((s) => ({ ...s, loading: true }));
-      const offering = await PurchasesService.getOfferings();
-      const pkgs = offering?.availablePackages ?? [];
+      const pkgs = PayPalService.getProducts();
       setPackages(pkgs);
     } catch (e: any) {
-      setState((s) => ({ ...s, error: e?.message ?? 'Error recargando compras' }));
+      setState((s) => ({ ...s, error: e?.message ?? 'Error recargando productos' }));
     } finally {
       setState((s) => ({ ...s, loading: false }));
     }
@@ -232,110 +193,155 @@ export function usePremium() {
     return () => clearInterval(interval);
   }, [state.isPremium]);
 
-  const subscribe = useCallback(async (pkg: any) => {
+  const subscribe = useCallback(async (pkg: PayPalProduct) => {
     console.log('🛒 subscribe llamado con:', pkg);
     setState((s) => ({ ...s, loading: true, error: null }));
-    
-    // Timeout de seguridad para resetear loading
-    const timeoutId = setTimeout(() => {
-      console.log('⏰ Timeout de seguridad - reseteando loading');
-      setState((s) => ({ ...s, loading: false }));
-    }, 10000); // 10 segundos timeout
     
     try {
       // Verificar si el paquete es válido
       if (!pkg) {
-        throw new Error('No se seleccionó un paquete de suscripción');
+        throw new Error('No se seleccionó un producto de suscripción');
       }
       
-      console.log('🛒 Iniciando suscripción con paquete:', pkg.identifier || pkg.id);
+      console.log('🛒 Iniciando pago con PayPal:', pkg.id);
       
-      const info = await PurchasesService.purchasePackage(pkg);
-      const entitlements = info?.entitlements?.active ?? {};
-      const isPro = entitlements["pro"] != null;
-      console.log('🛒 Resultado de compra:', { isPro, entitlements: Object.keys(entitlements) });
+      const result = await PayPalService.processPayment(pkg);
       
-      setState((s) => ({ ...s, isPremium: isPro, customerInfo: info ?? null }));
+      if (result.success) {
+        if (result.requiresWebView && result.approvalUrl) {
+          console.log('🌐 Pago requiere WebView, guardando estado pendiente');
+          
+          setState((s) => ({ 
+            ...s, 
+            loading: false,
+            pendingPayment: {
+              product: pkg,
+              result: result
+            }
+          }));
+          
+          return { 
+            success: true, 
+            requiresWebView: true,
+            approvalUrl: result.approvalUrl,
+            orderId: result.orderId
+          } as const;
+        } else {
+          console.log('🛒 Resultado de pago exitoso:', result.transactionId);
+          
+          setState((s) => ({ 
+            ...s, 
+            isPremium: true, 
+            customerInfo: { transactionId: result.transactionId, product: pkg },
+            loading: false
+          }));
+          
+          // Actualizar estado premium inmediatamente
+          await updatePremiumState();
+          
+          // Trackear conversión a premium
+          await AnalyticsService.trackPremiumConverted(pkg.id, pkg.price);
+          
+          // Trackear para sistema de reseñas
+          await ReviewService.trackPremiumSubscribed();
+          
+          console.log('✅ Usuario convertido a Premium');
+          
+          return { success: true } as const;
+        }
+      } else {
+        throw new Error(result.error || 'Pago falló');
+      }
+    } catch (e: any) {
+      console.error('❌ Error en pago:', e);
+      const errorMessage = e?.message ?? 'No se pudo completar el pago';
+      setState((s) => ({ ...s, error: errorMessage, loading: false }));
+      return { success: false, error: { message: errorMessage } } as const;
+    }
+  }, [updatePremiumState]);
+
+  const completePaymentFromWebView = useCallback(async (transactionId: string, product: PayPalProduct) => {
+    console.log('🎉 Completando pago desde WebView:', transactionId);
+    
+    try {
+      // Primero capturar la orden aprobada
+      const captureResult = await PayPalService.captureApprovedOrder(transactionId);
       
-      // Actualizar estado premium inmediatamente
-      await updatePremiumState();
-      
-      // Trackear conversión a premium
-      if (isPro) {
-        await AnalyticsService.trackPremiumConverted(pkg.identifier || pkg.id, pkg.product?.price || pkg.price);
+      if (captureResult.success) {
+        console.log('✅ Orden capturada exitosamente:', captureResult.transactionId);
+        
+        // Guardar estado premium en AsyncStorage ANTES de actualizar el estado
+        if (captureResult.transactionId) {
+          await PayPalService.savePremiumState(product, captureResult.transactionId);
+          console.log('💾 Estado premium guardado en AsyncStorage');
+        } else {
+          console.warn('⚠️ No se pudo guardar estado premium: transactionId no disponible');
+        }
+        
+        setState((s) => ({ 
+          ...s, 
+          isPremium: true, 
+          customerInfo: { transactionId: captureResult.transactionId, product: product },
+          loading: false,
+          pendingPayment: undefined
+        }));
+        
+        // Trackear conversión a premium
+        await AnalyticsService.trackPremiumConverted(product.id, product.price);
         
         // Trackear para sistema de reseñas
         await ReviewService.trackPremiumSubscribed();
         
-        console.log('✅ Usuario convertido a Premium');
+        console.log('✅ Pago completado exitosamente desde WebView');
+      } else {
+        throw new Error(captureResult.error || 'Error capturando la orden');
       }
-      
-      return { success: true } as const;
-    } catch (e: any) {
-      console.error('❌ Error en suscripción:', e);
-      const errorMessage = e?.message ?? 'No se pudo completar la compra';
-      setState((s) => ({ ...s, error: errorMessage }));
-      return { success: false, error: { message: errorMessage } } as const;
-    } finally {
-      clearTimeout(timeoutId);
-      console.log('🏁 Finalizando suscripción - reseteando loading');
-      setState((s) => ({ ...s, loading: false }));
+    } catch (error: any) {
+      console.error('❌ Error completando pago desde WebView:', error);
+      setState((s) => ({ 
+        ...s, 
+        error: error.message,
+        loading: false,
+        pendingPayment: undefined
+      }));
     }
-  }, [updatePremiumState]);
+  }, []);
+
+  const cancelPaymentFromWebView = useCallback(() => {
+    console.log('❌ Pago cancelado desde WebView');
+    setState((s) => ({ 
+      ...s, 
+      loading: false,
+      pendingPayment: undefined,
+      error: 'Pago cancelado por el usuario'
+    }));
+  }, []);
 
   const restore = useCallback(async () => {
-    console.log('🔄 Iniciando restauración ULTRA-AGRESIVA en usePremium...');
+    console.log('🔄 Iniciando restauración con PayPal...');
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
-      // Usar la nueva función de sincronización forzada
-      console.log('🔄 Usando sincronización forzada con Apple...');
-      const info = await PurchasesService.forceSyncWithApple();
+      console.log('🔄 Verificando compras existentes...');
+      const result = await PayPalService.restorePurchases();
       
-      const entitlements = info?.entitlements?.active ?? {};
-      const isPro = entitlements["pro"] != null;
-      
-      console.log('🔄 Estado del cliente después de sincronización forzada:', { 
-        isPro, 
-        entitlements: Object.keys(entitlements),
-        activeSubscriptions: info?.activeSubscriptions || []
-      });
-      
-      // Forzar actualización del estado
-      setState((s) => ({ 
-        ...s, 
-        isPremium: isPro, 
-        customerInfo: info ?? null,
-        loading: false
-      }));
-      
-      // Actualizar estado premium una vez más
-      console.log('🔄 Actualizando estado premium final...');
-      await updatePremiumState();
-      
-      // Verificar una vez más después de la actualización
-      const finalInfo = await PurchasesService.getCustomerInfo();
-      const finalEntitlements = finalInfo?.entitlements?.active ?? {};
-      const finalIsPro = finalEntitlements["pro"] != null;
-      
-      console.log('🔄 Verificación final:', { 
-        finalIsPro, 
-        finalEntitlements: Object.keys(finalEntitlements)
-      });
-      
-      // Actualizar estado final
-      setState((s) => ({ 
-        ...s, 
-        isPremium: finalIsPro, 
-        customerInfo: finalInfo ?? null
-      }));
-      
-      // Solo devolver éxito si realmente se encontró una suscripción
-      if (finalIsPro) {
+      if (result.success) {
+        console.log('🔄 Restauración exitosa');
+        
+        // Actualizar estado premium
+        await updatePremiumState();
+        
+        setState((s) => ({ 
+          ...s, 
+          isPremium: true,
+          loading: false
+        }));
+        
         console.log('✅ Restauración exitosa - Premium activado');
         return { success: true } as const;
       } else {
-        console.log('ℹ️ No se encontraron suscripciones activas');
-        return { success: false, error: { message: 'No se encontraron compras para restaurar' } } as const;
+        console.log('ℹ️ No se encontraron compras para restaurar');
+        setState((s) => ({ ...s, error: result.error || 'No se encontraron compras para restaurar' }));
+        return { success: false, error: { message: result.error || 'No se encontraron compras para restaurar' } } as const;
       }
     } catch (e: any) {
       console.error('❌ Error en restauración:', e);
@@ -360,16 +366,15 @@ export function usePremium() {
       // En producción, el trial gratuito debe ser una suscripción real con período de prueba
       // Buscar el paquete con trial gratuito (generalmente el mensual)
       const trialPackage = packages.find(pkg => 
-        pkg.packageType === 'MONTHLY' || 
-        pkg.identifier.includes('monthly') ||
-        pkg.product?.productIdentifier?.includes('monthly')
+        pkg.type === 'monthly' || 
+        pkg.id.includes('monthly')
       );
       
       console.log('🎁 Paquetes disponibles:', packages.length);
       console.log('🎁 Trial package encontrado:', !!trialPackage);
       
       if (!trialPackage) {
-        console.log('⚠️ No se encontró paquete de RevenueCat, usando trial simulado');
+        console.log('⚠️ No se encontró producto mensual, usando trial simulado');
         // Si no hay paquetes reales, simular el trial
         setState((s) => ({ 
           ...s, 
@@ -390,27 +395,26 @@ export function usePremium() {
         return { success: true } as const;
       }
       
-      console.log('🎁 Iniciando trial gratuito con paquete:', trialPackage.identifier);
+      console.log('🎁 Iniciando trial gratuito con producto:', trialPackage.id);
       
-      // Iniciar compra del paquete con trial gratuito
-      const info = await PurchasesService.purchasePackage(trialPackage);
-      const entitlements = info?.entitlements?.active ?? {};
-      const isPro = entitlements["pro"] != null;
-      console.log('🎁 Resultado de trial:', { isPro, entitlements: Object.keys(entitlements) });
+      // Procesar pago del trial (simulado en desarrollo)
+      const result = await PayPalService.processPayment(trialPackage);
       
-      setState((s) => ({ 
-        ...s, 
-        isPremium: isPro, 
-        customerInfo: info ?? null,
-        subscriptionStatus: isPro ? 'trial' : 'none',
-        trialDaysRemaining: isPro ? 3 : 0,
-        canStartTrial: !isPro
-      }));
+      if (result.success) {
+        console.log('🎁 Resultado de trial exitoso:', result.transactionId);
       
-      // Actualizar estado premium inmediatamente
-      await updatePremiumState();
+        setState((s) => ({ 
+          ...s, 
+          isPremium: true, 
+          customerInfo: { transactionId: result.transactionId, product: trialPackage },
+          subscriptionStatus: 'trial',
+          trialDaysRemaining: 3,
+          canStartTrial: false
+        }));
       
-      if (isPro) {
+        // Actualizar estado premium inmediatamente
+        await updatePremiumState();
+        
         // Programar notificaciones de trial
         await TrialNotificationService.startTrial();
         
@@ -418,9 +422,11 @@ export function usePremium() {
         await AnalyticsService.trackTrialStarted();
         
         console.log('✅ Trial gratuito iniciado exitosamente');
+        
+        return { success: true } as const;
+      } else {
+        throw new Error(result.error || 'Trial falló');
       }
-      
-      return { success: true } as const;
     } catch (e: any) {
       console.error('❌ Error iniciando trial gratuito:', e);
       setState((s) => ({ ...s, error: e?.message ?? 'No se pudo iniciar el trial gratuito' }));
@@ -443,11 +449,16 @@ export function usePremium() {
     subscriptionStatus: state.subscriptionStatus,
     nextBillingDate: state.nextBillingDate,
     canStartTrial: state.canStartTrial,
+    expiryDate: state.expiryDate,
+    productType: state.productType,
+    pendingPayment: state.pendingPayment,
     subscribe,
     restore,
     startTrial,
     updatePremiumState,
     reloadOfferings,
+    completePaymentFromWebView,
+    cancelPaymentFromWebView,
   };
 }
 

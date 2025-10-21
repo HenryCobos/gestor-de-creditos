@@ -1,25 +1,23 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { Card, Button, PremiumBadge } from '../ui';
+import { PayPalWebView } from './PayPalWebView';
 
-// Definir tipo local para evitar import directo
-interface PurchasesPackage {
-  identifier: string;
-  packageType: string;
-  product: {
-    priceString: string;
-    price: number;
-    title: string;
-    currencyCode?: string;
-  };
+// Definir tipo local para PayPal
+interface PayPalProduct {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  type: 'monthly' | 'yearly';
 }
 
 interface ContextualPaywallProps {
   visible: boolean;
   onClose: () => void;
-  packages: PurchasesPackage[];
+  packages: PayPalProduct[];
   loading: boolean;
-  onSelect: (pkg: PurchasesPackage) => void;
+  onSelect: (pkg: PayPalProduct) => void;
   onRestore: () => void;
   onStartTrial?: () => void;
   onRetry?: () => void;
@@ -32,6 +30,12 @@ interface ContextualPaywallProps {
     currentUsage?: number;
     limit?: number;
   };
+  pendingPayment?: {
+    product: PayPalProduct;
+    result: any;
+  };
+  onCompletePayment?: (transactionId: string, product: PayPalProduct) => void;
+  onCancelPayment?: () => void;
 }
 
 const { width, height } = Dimensions.get('window');
@@ -47,27 +51,65 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
   onRetry,
   error,
   context,
+  pendingPayment,
+  onCompletePayment,
+  onCancelPayment,
 }) => {
   const isNearLimit = context.currentUsage && context.limit 
     ? context.currentUsage >= context.limit * 0.8 
     : false;
   
+  const [showPayPalWebView, setShowPayPalWebView] = useState(false);
+  
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Manejar pago pendiente
+  React.useEffect(() => {
+    if (pendingPayment && pendingPayment.result && pendingPayment.result.approvalUrl) {
+      console.log('🌐 Abriendo PayPal WebView para pago pendiente');
+      setShowPayPalWebView(true);
+    }
+  }, [pendingPayment]);
+
+  // Callbacks para PayPal WebView
+  const handlePayPalSuccess = (transactionId: string) => {
+    console.log('✅ Pago exitoso desde WebView:', transactionId);
+    setShowPayPalWebView(false);
+    if (pendingPayment && onCompletePayment) {
+      onCompletePayment(transactionId, pendingPayment.product);
+    }
+  };
+
+  const handlePayPalCancel = () => {
+    console.log('❌ Pago cancelado desde WebView');
+    setShowPayPalWebView(false);
+    if (onCancelPayment) {
+      onCancelPayment();
+    }
+  };
+
+  const handlePayPalClose = () => {
+    console.log('🚪 Cerrando PayPal WebView');
+    setShowPayPalWebView(false);
+    if (onCancelPayment) {
+      onCancelPayment();
+    }
+  };
+
   // Función helper para formatear precios con símbolo de moneda correcto
-  const formatPrice = (price: number, currencyCode?: string): string => {
+  const formatPrice = (price: number, currency: string): string => {
     try {
-      if (!currencyCode) {
-        console.warn('⚠️ Sin currencyCode, usando formato USD');
+      if (!currency) {
+        console.warn('⚠️ Sin currency, usando formato USD');
         return `$${price.toFixed(2)}`;
       }
       
-      console.log(`💱 Formateando precio: ${price} ${currencyCode}`);
+      console.log(`💱 Formateando precio: ${price} ${currency}`);
       
       // Usar Intl.NumberFormat para obtener el formato correcto según la moneda
       const formatter = new Intl.NumberFormat('es-419', {
         style: 'currency',
-        currency: currencyCode,
+        currency: currency,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
@@ -82,12 +124,13 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
+    <>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={onClose}
+      >
       <View style={styles.overlay}>
         <View style={styles.container}>
           {/* Header fijo */}
@@ -186,10 +229,10 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                     console.log('📦 Packages:', packages);
                     console.log('📦 Packages length:', packages?.length);
                     console.log('📦 Packages details:', packages?.map(pkg => ({
-                      identifier: pkg.identifier,
-                      packageType: pkg.packageType,
-                      price: pkg.product?.priceString,
-                      title: pkg.product?.title
+                      id: pkg.id,
+                      type: pkg.type,
+                      price: pkg.price,
+                      name: pkg.name
                     })));
                     console.log('⚠️ Error:', error);
                     console.log('🔄 Loading:', loading);
@@ -203,7 +246,7 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
 
             {/* Mostrar error si no hay productos válidos pero no hay error específico */}
             {!error && packages && packages.length > 0 && !packages.every(pkg => 
-              pkg && pkg.identifier && pkg.packageType && pkg.product
+              pkg && pkg.id && pkg.type && pkg.price
             ) && (
               <View style={styles.errorContainer}>
                 <Text style={styles.errorIcon}>⚠️</Text>
@@ -231,10 +274,10 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                   console.log('📦 Packages:', packages);
                   console.log('📦 Packages length:', packages?.length);
                   console.log('📦 Packages details:', packages?.map(pkg => ({
-                    identifier: pkg.identifier,
-                    packageType: pkg.packageType,
-                    price: pkg.product?.priceString,
-                    title: pkg.product?.title
+                    id: pkg.id,
+                    type: pkg.type,
+                    price: pkg.price,
+                    name: pkg.name
                   })));
                   console.log('⚠️ Error:', error);
                   console.log('🔄 Loading:', loading);
@@ -251,15 +294,15 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
                 console.log('🔍 ContextualPaywall - packages recibidos:', packages);
                 console.log('🔍 ContextualPaywall - packages.length:', packages?.length);
                 console.log('🔍 ContextualPaywall - packages detalle:', packages?.map(pkg => ({
-                  identifier: pkg.identifier,
-                  packageType: pkg.packageType,
-                  price: pkg.product?.priceString,
-                  title: pkg.product?.title
+                  id: pkg.id,
+                  type: pkg.type,
+                  price: pkg.price,
+                  name: pkg.name
                 })));
                 
                 // Verificar si hay productos válidos
                 const hasValidPackages = packages && packages.length > 0 && packages.every(pkg => 
-                  pkg && pkg.identifier && pkg.packageType && pkg.product
+                  pkg && pkg.id && pkg.type && pkg.price
                 );
                 
                 console.log('🔍 ContextualPaywall - hasValidPackages:', hasValidPackages);
@@ -267,55 +310,53 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
               })() ? (
                 packages.map((pkg, index) => (
                   <TouchableOpacity 
-                    key={pkg.identifier}
+                    key={pkg.id}
                     style={[
                       styles.package,
-                      pkg.packageType === 'ANNUAL' && styles.recommendedPackage
+                      pkg.type === 'yearly' && styles.recommendedPackage
                     ]}
                     onPress={() => {
                       onSelect(pkg);
                     }} 
                     disabled={loading}
                   >
-                    {pkg.packageType === 'ANNUAL' && (
+                    {pkg.type === 'yearly' && (
                       <View style={styles.recommendedBadge}>
                         <Text style={styles.recommendedText}>MEJOR OPCIÓN</Text>
                       </View>
                     )}
                     <View style={styles.packageContent}>
                       <Text style={styles.packageTitle}>
-                        {pkg.packageType === 'ANNUAL' ? 'Premium Anual' : 'Premium Mensual'}
+                        {pkg.type === 'yearly' ? 'Premium Anual' : 'Premium Mensual'}
                       </Text>
                       <View style={styles.priceContainer}>
                         <Text style={styles.packagePrice}>
-                          {pkg.product?.price && pkg.product?.currencyCode
-                            ? formatPrice(pkg.product.price, pkg.product.currencyCode)
-                            : pkg.product?.priceString || `$${pkg.product?.price?.toFixed(2) || '0.00'}`}
+                          {formatPrice(pkg.price, pkg.currency)}
                         </Text>
                         <Text style={styles.pricePeriod}>
-                          {pkg.packageType === 'ANNUAL' ? ' por año' : ' por mes'}
+                          {pkg.type === 'yearly' ? ' por año' : ' por mes'}
                         </Text>
-                        {pkg.packageType === 'ANNUAL' && pkg.product.price && pkg.product.currencyCode && (
+                        {pkg.type === 'yearly' && (
                           <Text style={styles.pricePerMonth}>
-                            /mes ({formatPrice(pkg.product.price / 12, pkg.product.currencyCode)})
+                            /mes ({formatPrice(pkg.price / 12, pkg.currency)})
                           </Text>
                         )}
                       </View>
                       <Text style={styles.packageDescription}>
-                        {pkg.packageType === 'MONTHLY' ? 'Facturación mensual' : 'Facturación anual'}
+                        {pkg.type === 'monthly' ? 'Facturación mensual' : 'Facturación anual'}
                       </Text>
                       <Text style={styles.subscriptionInfo}>
-                        Suscripción auto-renovable {pkg.packageType === 'ANNUAL' ? 'anual' : 'mensual'}
+                        Suscripción auto-renovable {pkg.type === 'yearly' ? 'anual' : 'mensual'}
                       </Text>
-                      {pkg.packageType === 'ANNUAL' && pkg.product.price && pkg.product.currencyCode && (
+                      {pkg.type === 'yearly' && (
                         <Text style={styles.savingsText}>
                           {(() => {
                             // Calcular ahorro: (precio mensual * 12) - precio anual
-                            const monthlyPkg = packages.find(p => p.packageType === 'MONTHLY');
-                            if (monthlyPkg && monthlyPkg.product && monthlyPkg.product.price) {
-                              const savings = (monthlyPkg.product.price * 12) - pkg.product.price;
+                            const monthlyPkg = packages.find(p => p.type === 'monthly');
+                            if (monthlyPkg) {
+                              const savings = (monthlyPkg.price * 12) - pkg.price;
                               if (savings > 0) {
-                                return `Ahorras ${formatPrice(savings, pkg.product.currencyCode)} al año`;
+                                return `Ahorras ${formatPrice(savings, pkg.currency)} al año`;
                               }
                             }
                             return 'Ahorra con el plan anual';
@@ -402,6 +443,19 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
         </View>
       </View>
     </Modal>
+
+    {/* PayPal WebView Modal */}
+    {pendingPayment && showPayPalWebView && pendingPayment.result && (
+      <PayPalWebView
+        visible={showPayPalWebView}
+        product={pendingPayment.product}
+        approvalUrl={pendingPayment.result.approvalUrl}
+        onSuccess={handlePayPalSuccess}
+        onError={handlePayPalCancel}
+        onClose={handlePayPalClose}
+      />
+    )}
+    </>
   );
 };
 

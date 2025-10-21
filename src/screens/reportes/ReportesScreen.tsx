@@ -666,6 +666,9 @@ export function ReportesScreen() {
           icon: '',
           featureName: '',
         }}
+        pendingPayment={contextualPaywall.pendingPayment}
+        onCompletePayment={contextualPaywall.onCompletePayment}
+        onCancelPayment={contextualPaywall.onCancelPayment}
       />
 
       {/* Modal de Exportación */}
