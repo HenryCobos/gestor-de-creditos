@@ -115,6 +115,16 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ),
         pagos: [...state.pagos, action.payload.pago],
       };
+    case 'UPDATE_CUOTA_WITH_PAYMENT':
+      return {
+        ...state,
+        cuotas: state.cuotas.map(cuota =>
+          cuota.id === action.payload.cuotaId 
+            ? action.payload.cuotaActualizada
+            : cuota
+        ),
+        pagos: [...state.pagos, action.payload.pago],
+      };
 
     // Pagos
     case 'SET_PAGOS':
@@ -597,6 +607,11 @@ export function AppProvider({ children }: AppProviderProps) {
         throw new Error('Cuota no encontrada');
       }
 
+      // Obtener pagos anteriores para esta cuota
+      const pagosAnteriores = obtenerPagosPorCuota(cuotaId);
+      const totalPagadoAnterior = pagosAnteriores.reduce((sum, p) => sum + p.monto, 0);
+      const nuevoTotalPagado = totalPagadoAnterior + pagoData.monto;
+
       const pago: Pago = {
         id: `pago_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         cuotaId: cuota.id,
@@ -611,19 +626,30 @@ export function AppProvider({ children }: AppProviderProps) {
 
       await StorageService.addPago(pago);
       
+      // Determinar el estado de la cuota basado en el total pagado
+      let nuevoEstado: Cuota['estado'];
+      if (nuevoTotalPagado >= cuota.montoTotal) {
+        nuevoEstado = 'pagada';
+      } else if (nuevoTotalPagado > 0) {
+        nuevoEstado = 'parcial';
+      } else {
+        nuevoEstado = cuota.estado === 'vencida' ? 'vencida' : 'pendiente';
+      }
+
       // Actualizar estado de la cuota
       const cuotaActualizada: Cuota = {
         ...cuota,
-        estado: 'pagada',
-        fechaPago: pagoData.fechaPago,
-        montoPagado: pagoData.monto,
+        estado: nuevoEstado,
+        fechaPago: nuevoEstado === 'pagada' ? pagoData.fechaPago : cuota.fechaPago,
+        montoPagado: nuevoTotalPagado,
       };
 
       await StorageService.updateCuota(cuotaActualizada);
 
+      // Usar la nueva acción que maneja tanto pagos completos como parciales
       dispatch({ 
-        type: 'MARK_CUOTA_PAID', 
-        payload: { cuotaId, pago } 
+        type: 'UPDATE_CUOTA_WITH_PAYMENT', 
+        payload: { cuotaId, cuotaActualizada, pago } 
       });
 
     } catch (error) {

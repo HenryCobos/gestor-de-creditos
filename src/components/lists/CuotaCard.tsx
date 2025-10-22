@@ -24,6 +24,11 @@ export function CuotaCard({
   const estadoConfig = ESTADOS_CUOTA.find(e => e.value === cuota.estado);
   const fechaInfo = formatearParaLista(cuota.fechaVencimiento);
   const montoRestante = cuota.montoTotal - montoPagado;
+  
+  // Determinar si la cuota está vencida pero tiene pagos parciales
+  const hoy = new Date().toISOString().split('T')[0];
+  const estaVencida = cuota.fechaVencimiento < hoy;
+  const tienePagosParciales = montoPagado > 0 && montoPagado < cuota.montoTotal;
 
   return (
     <Card onPress={onPress} style={styles.card}>
@@ -92,9 +97,24 @@ export function CuotaCard({
         </Text>
       )}
 
-      {showActions && cuota.estado === 'pendiente' && onMarkPaid && (
-        <TouchableOpacity style={styles.pagarButton} onPress={onMarkPaid}>
-          <Text style={styles.pagarText}>💳 Marcar como pagada</Text>
+      {showActions && onMarkPaid && (
+        <TouchableOpacity 
+          style={[
+            styles.pagarButton, 
+            cuota.estado === 'parcial' && styles.completarButton,
+            cuota.estado === 'vencida' && styles.atrasadoButton
+          ]} 
+          onPress={onMarkPaid}
+        >
+          <Text style={[
+            styles.pagarText,
+            cuota.estado === 'parcial' && styles.completarText,
+            cuota.estado === 'vencida' && styles.atrasadoText
+          ]}>
+            {cuota.estado === 'parcial' ? '💰 Completar pago' : 
+             cuota.estado === 'vencida' ? '⚠️ Registrar pago atrasado' : 
+             '💳 Marcar como pagada'}
+          </Text>
         </TouchableOpacity>
       )}
     </Card>
@@ -226,9 +246,25 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
 
+  completarButton: {
+    backgroundColor: '#2196F3',
+  },
+
+  atrasadoButton: {
+    backgroundColor: '#FF9800',
+  },
+
   pagarText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+
+  completarText: {
+    color: '#FFFFFF',
+  },
+
+  atrasadoText: {
+    color: '#FFFFFF',
   },
 });

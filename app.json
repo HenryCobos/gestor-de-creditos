@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "Gestor de Créditos",
-    "slug": "gestor-de-creditos",
-    "version": "1.3.1",
+    "slug": "gestor-de-creditos-android",
+    "version": "1.3.4",
     "orientation": "portrait",
     "platforms": [
       "android"
@@ -26,26 +26,26 @@
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 34,
+            "compileSdkVersion": 35,
             "targetSdkVersion": 34,
-            "buildToolsVersion": "34.0.0"
+            "buildToolsVersion": "35.0.0"
           }
         }
       ],
       "expo-font"
     ],
     "extra": {
-      "eas": {
-        "projectId": "fcc79bd1-8773-45fb-a4f3-844d1bdd2713"
-      },
       "PAYPAL_CLIENT_ID": "AZ8-bEe18O6iV94mOfhtJfN-9e3SngJk3XuRMHcIdwzwXMcDBkXfX9VEoS4DAJ3MD3Ccd2StuVSiB_Fw",
       "PAYPAL_CLIENT_SECRET": "EECN530swi5V_QOlf6DwKRrFLo4tr_TYbDVVE2FZ97OWuvUxB7JaSE6kcRcGq2-hWIXx0F-551q2jsop",
-      "PAYPAL_ENVIRONMENT": "production"
+      "PAYPAL_ENVIRONMENT": "production",
+      "eas": {
+        "projectId": "2b135ac1-89fa-4289-afdb-02f69e63e621"
+      }
     },
     "owner": "henryapper",
     "android": {
-      "package": "com.gestordecreditos.app",
-      "versionCode": 1,
+      "package": "com.gestordecreditos.android",
+      "versionCode": 159,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"

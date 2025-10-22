@@ -16,7 +16,7 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: 'monthly',
     name: 'Mensual',
-    price: 9.99,
+    price: 1.00,
     period: 'monthly',
     revenueCatId: 'gdc_pro_monthly',
     features: [

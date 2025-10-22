@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { Button, LoadingSpinner, EmptyState, Input, ClienteCard, LimitIndicator, PremiumBadge } from '../../components';
-import { SimplePaywall } from '../../components/paywall/SimplePaywall';
+import { ContextualPaywall } from '../../components/paywall';
 // Ads eliminados
 import { usePremium } from '../../hooks/usePremium';
 import { useContextualPaywall } from '../../hooks/useContextualPaywall';
@@ -210,17 +210,25 @@ export function ClientesScreen() {
         />
       )}
       
-      {/* Paywall Simple */}
-      <SimplePaywall
+      {/* Paywall Contextual */}
+      <ContextualPaywall
         visible={contextualPaywall.visible}
         onClose={contextualPaywall.hidePaywall}
+        packages={contextualPaywall.packages}
+        loading={contextualPaywall.loading}
+        error={contextualPaywall.error}
         onSelect={contextualPaywall.handleSubscribe}
-        onStartTrial={contextualPaywall.handleStartTrial}
-        context={{
-          currentUsage: contextualPaywall.context?.currentUsage || state.clientes.length,
-          limit: contextualPaywall.context?.limit || 10,
-          featureName: contextualPaywall.context?.featureName || 'Clientes',
+        onRestore={contextualPaywall.handleRestore}
+        onRetry={contextualPaywall.handleRetry}
+        context={contextualPaywall.context || {
+          title: '',
+          message: '',
+          icon: '',
+          featureName: '',
         }}
+        pendingPayment={contextualPaywall.pendingPayment}
+        onCompletePayment={contextualPaywall.onCompletePayment}
+        onCancelPayment={contextualPaywall.onCancelPayment}
       />
       
       {/* Espacio inferior para safe area */}

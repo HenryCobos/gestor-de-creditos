@@ -56,7 +56,7 @@ export const PayPalWebView: React.FC<PayPalWebViewProps> = ({
     console.log('🔍 Navegando a:', url);
 
     // Verificar si es la URL de éxito
-    if (url.includes('gestordecreditos.netlify.app/success')) {
+    if (url.includes('gestordecreditos.netlify.app/success') || url.includes('payment=success')) {
       // Extraer el token de la URL
       const urlParams = new URLSearchParams(url.split('?')[1]);
       const token = urlParams.get('token');
@@ -66,11 +66,16 @@ export const PayPalWebView: React.FC<PayPalWebViewProps> = ({
         console.log('✅ Pago aprobado por el usuario:', { token, PayerID });
         onSuccess(token);
         return;
+      } else {
+        // Si no hay token/PayerID pero es URL de éxito, asumir éxito
+        console.log('✅ Pago exitoso detectado (sin token específico)');
+        onSuccess('paypal_success');
+        return;
       }
     }
 
     // Verificar si es la URL de cancelación
-    if (url.includes('gestordecreditos.netlify.app/cancel')) {
+    if (url.includes('gestordecreditos.netlify.app/cancel') || url.includes('payment=cancel')) {
       console.log('❌ Pago cancelado por el usuario');
       onError('Pago cancelado por el usuario');
       return;

@@ -3,7 +3,7 @@ import { View, ScrollView, Text, StyleSheet, Alert, RefreshControl, FlatList } f
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { Card, Button, LoadingSpinner, EmptyState, Badge, CuotaCard } from '../../components';
+import { Card, Button, LoadingSpinner, EmptyState, Badge, CuotaCard, PagoModal } from '../../components';
 import { formatearFecha, formatearFechaTexto, getEstadoFecha } from '../../utils/dateUtils';
 import { CalculationService } from '../../services/calculations';
 import { ReviewService } from '../../services/reviewService';
@@ -19,11 +19,14 @@ export function PrestamoDetalleScreen() {
     obtenerCliente, 
     obtenerCuotasPorPrestamo,
     obtenerPagosPorPrestamo,
+    obtenerPagosPorCuota,
     eliminarPrestamo, 
     marcarCuotaPagada,
     state 
   } = useApp();
   const [refreshing, setRefreshing] = useState(false);
+  const [modalPagoVisible, setModalPagoVisible] = useState(false);
+  const [cuotaSeleccionada, setCuotaSeleccionada] = useState<string | null>(null);
   
   const prestamo = obtenerPrestamo(prestamoId);
   const cliente = prestamo ? obtenerCliente(prestamo.clienteId) : undefined;
@@ -92,14 +95,23 @@ export function PrestamoDetalleScreen() {
     );
   };
 
-  const handleMarcarCuotaPagada = async (cuotaId: string, montoPagado: number) => {
+  const handleMarcarCuotaPagada = async (cuotaId: string) => {
+    setCuotaSeleccionada(cuotaId);
+    setModalPagoVisible(true);
+  };
+
+  const handleConfirmarPago = async (monto: number, metodoPago: string, notas: string) => {
     try {
-      await marcarCuotaPagada(cuotaId, {
-        cuotaId: cuotaId,
-        monto: montoPagado,
+      await marcarCuotaPagada(cuotaSeleccionada!, {
+        cuotaId: cuotaSeleccionada!,
+        monto: monto,
         fechaPago: new Date().toISOString().split('T')[0],
-        notas: 'Pago registrado desde detalle de préstamo'
+        metodoPago: metodoPago as 'efectivo' | 'transferencia' | 'cheque' | 'otro',
+        notas: notas
       });
+      
+      setModalPagoVisible(false);
+      setCuotaSeleccionada(null);
       
       // Verificar si el préstamo se completó
       const cuotasActualizadas = obtenerCuotasPorPrestamo(prestamoId);
@@ -119,13 +131,13 @@ export function PrestamoDetalleScreen() {
           }]
         );
       } else {
-        Alert.alert('Éxito', 'Cuota marcada como pagada');
+        Alert.alert('Éxito', 'Pago registrado correctamente');
         // Trigger de milestone de pagos
         await ReviewService.triggerOnPaymentMilestone();
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo marcar la cuota como pagada');
-      console.error('Error al marcar cuota como pagada:', error);
+      console.error('Error registrando pago:', error);
+      Alert.alert('Error', 'No se pudo registrar el pago');
     }
   };
 
@@ -205,10 +217,11 @@ export function PrestamoDetalleScreen() {
   const tipoInteresBadge = getTipoInteresBadge(prestamo.tipoInteres);
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
       {/* Información del Cliente */}
       <Card style={styles.card}>
         <Text style={styles.sectionTitle}>Cliente</Text>
@@ -322,8 +335,9 @@ export function PrestamoDetalleScreen() {
             renderItem={({ item }) => (
               <CuotaCard
                 cuota={item}
-                onMarkPaid={() => handleMarcarCuotaPagada(item.id, item.montoTotal)}
+                onMarkPaid={() => handleMarcarCuotaPagada(item.id)}
                 showActions={item.estado !== 'pagada'}
+                montoPagado={item.montoPagado || 0}
               />
             )}
             scrollEnabled={false}
@@ -355,6 +369,21 @@ export function PrestamoDetalleScreen() {
 
       <View style={styles.bottomSpacing} />
     </ScrollView>
+
+    {/* Modal de Pago */}
+    {cuotaSeleccionada && (
+      <PagoModal
+        visible={modalPagoVisible}
+        cuota={cuotas.find(c => c.id === cuotaSeleccionada) || null}
+        pagosAnteriores={obtenerPagosPorCuota(cuotaSeleccionada)}
+        onClose={() => {
+          setModalPagoVisible(false);
+          setCuotaSeleccionada(null);
+        }}
+        onConfirm={handleConfirmarPago}
+      />
+    )}
+  </View>
   );
 }
 
@@ -362,6 +391,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  scrollView: {
+    flex: 1,
   },
   card: {
     margin: 16,

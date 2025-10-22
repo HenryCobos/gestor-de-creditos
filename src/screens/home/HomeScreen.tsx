@@ -1,15 +1,17 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useApp } from '../../context/AppContext';
 import { Card, Button, Badge, LoadingSpinner, EmptyState } from '../../components';
-import { SimplePaywall } from '../../components/paywall/SimplePaywall';
+import { ContextualPaywall } from '../../components/paywall';
+import { PayPalWebView } from '../../components/paywall/PayPalWebView';
 import { formatearFecha, formatearFechaTexto, getEstadoFecha } from '../../utils/dateUtils';
 import { addDays, parseISO, differenceInDays } from 'date-fns';
 import { isFeatureAllowed } from '../../utils/featureGating';
 import { usePremium } from '../../hooks/usePremium';
 import { useContextualPaywall } from '../../hooks/useContextualPaywall';
 import { useConversionFlow } from '../../hooks/useConversionFlow';
+import { webViewService } from '../../services/webViewService';
 // Ads eliminados
 
 export function HomeScreen() {
@@ -18,6 +20,10 @@ export function HomeScreen() {
   const premium = usePremium();
   const contextualPaywall = useContextualPaywall();
   const conversionFlow = useConversionFlow();
+  
+  // Estado para PayPal WebView
+  const [showPayPalWebView, setShowPayPalWebView] = useState(false);
+  const [webViewProps, setWebViewProps] = useState<any>(null);
   
   // Navegación directa
   const navegar = (pantalla: string) => {
@@ -71,6 +77,64 @@ export function HomeScreen() {
     
     navegar('PrestamoForm');
   };
+
+  // Funciones para manejar PayPal WebView
+  const handleWebViewSuccess = async (transactionId: string) => {
+    console.log('✅ Pago completado en WebView:', transactionId);
+    setShowPayPalWebView(false);
+    setWebViewProps(null);
+    
+    // Completar el pago pendiente
+    if (premium.pendingPayment) {
+      await premium.completePaymentFromWebView(transactionId, premium.pendingPayment.product);
+    }
+  };
+
+  const handleWebViewCancel = () => {
+    console.log('❌ Pago cancelado en WebView');
+    setShowPayPalWebView(false);
+    setWebViewProps(null);
+    
+    // Cancelar el pago pendiente
+    if (premium.pendingPayment) {
+      premium.cancelPaymentFromWebView();
+    }
+  };
+
+  const handleWebViewError = (error: string) => {
+    console.error('❌ Error en WebView:', error);
+    setShowPayPalWebView(false);
+    setWebViewProps(null);
+  };
+
+  // Efecto para escuchar eventos del servicio global de WebView
+  useEffect(() => {
+    const handleShowWebView = (data: any) => {
+      console.log('🌐 HomeScreen: Recibido evento showWebView:', data);
+      setWebViewProps({
+        approvalUrl: data.approvalUrl,
+        orderId: data.orderId,
+        product: data.product
+      });
+      setShowPayPalWebView(true);
+    };
+
+    const handleHideWebView = () => {
+      console.log('🌐 HomeScreen: Recibido evento hideWebView');
+      setShowPayPalWebView(false);
+      setWebViewProps(null);
+    };
+
+    // Suscribirse a los eventos del servicio global
+    const cleanupShow = webViewService.onShowWebView(handleShowWebView);
+    const cleanupHide = webViewService.onHideWebView(handleHideWebView);
+
+    // Cleanup
+    return () => {
+      cleanupShow();
+      cleanupHide();
+    };
+  }, []);
 
   // Estadísticas principales
   const estadisticasHome = useMemo(() => {
@@ -445,18 +509,44 @@ export function HomeScreen() {
       <View style={styles.bottomSpacing} />
       </ScrollView>
       
-      {/* Paywall Simple */}
-      <SimplePaywall
+      {/* Paywall Contextual */}
+      <ContextualPaywall
         visible={contextualPaywall.visible}
         onClose={contextualPaywall.hidePaywall}
+        packages={contextualPaywall.packages}
+        loading={contextualPaywall.loading}
+        error={contextualPaywall.error || undefined}
         onSelect={contextualPaywall.handleSubscribe}
-        onStartTrial={contextualPaywall.handleStartTrial}
-        context={{
-          currentUsage: contextualPaywall.context?.currentUsage || state.clientes.length,
-          limit: contextualPaywall.context?.limit || 10,
-          featureName: contextualPaywall.context?.featureName || 'Clientes',
+        onRestore={contextualPaywall.handleRestore}
+        onRetry={contextualPaywall.handleRetry}
+        context={contextualPaywall.context || {
+          title: 'Funciones Premium disponibles',
+          message: 'Desbloquea todas las funciones premium de la aplicación',
+          icon: '⭐',
+          featureName: 'Funciones Premium',
+          currentUsage: 0,
+          limit: 3,
         }}
+        pendingPayment={contextualPaywall.pendingPayment}
+        onCompletePayment={contextualPaywall.onCompletePayment}
+        onCancelPayment={contextualPaywall.onCancelPayment}
       />
+
+      {/* PayPal WebView */}
+      {showPayPalWebView && webViewProps && (
+        <PayPalWebView
+          visible={showPayPalWebView}
+          onClose={() => {
+            console.log('🔍 Cerrando WebView desde HomeScreen');
+            setShowPayPalWebView(false);
+            setWebViewProps(null);
+          }}
+          onSuccess={handleWebViewSuccess}
+          onError={handleWebViewError}
+          product={webViewProps.product}
+          approvalUrl={webViewProps.approvalUrl}
+        />
+      )}
     </View>
   );
 }

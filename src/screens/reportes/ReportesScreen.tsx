@@ -658,7 +658,6 @@ export function ReportesScreen() {
         error={contextualPaywall.error}
         onSelect={contextualPaywall.handleSubscribe}
         onRestore={contextualPaywall.handleRestore}
-        onStartTrial={contextualPaywall.handleStartTrial}
         onRetry={contextualPaywall.handleRetry}
         context={contextualPaywall.context || {
           title: '',

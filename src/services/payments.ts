@@ -121,14 +121,14 @@ export class PayPalService {
   static getProducts(): PayPalProduct[] {
     return [
       {
-        id: 'monthly_premium_plan', // ID interno para plan mensual
+        id: 'P-5XJ99625GT120133NNDZHG3Y', // ID real de PayPal - Plan Mensual
         name: 'Plan Mensual Premium - Gestor de Créditos',
-        price: 9.99,
+        price: 1.00,
         currency: 'USD',
         type: 'monthly'
       },
       {
-        id: 'yearly_premium_plan', // ID interno para plan anual
+        id: 'P-6GH417601N8335719NDZHHYI', // ID real de PayPal - Plan Anual
         name: 'Plan Anual Premium - Gestor de Créditos',
         price: 59.99,
         currency: 'USD',
@@ -255,8 +255,8 @@ export class PayPalService {
         brand_name: 'Gestor de Créditos',
         landing_page: 'NO_PREFERENCE',
         user_action: 'PAY_NOW',
-        return_url: 'https://gestordecreditos.netlify.app/success',
-        cancel_url: 'https://gestordecreditos.netlify.app/cancel'
+        return_url: 'https://gestordecreditos.netlify.app/success?payment=success',
+        cancel_url: 'https://gestordecreditos.netlify.app/cancel?payment=cancel'
       }
     };
 
@@ -338,15 +338,23 @@ export class PayPalService {
   /**
    * Guarda el estado premium después del pago exitoso
    */
-  static async savePremiumState(product: PayPalProduct, transactionId: string): Promise<void> {
+  static async savePremiumState(data: any): Promise<void> {
     try {
+      // Si viene como objeto con isPremium, productId, etc. (formato nuevo)
+      if (data.isPremium !== undefined) {
+        await AsyncStorage.setItem('premium_state', JSON.stringify(data));
+        console.log('✅ Premium state saved:', data);
+        return;
+      }
+
+      // Si viene como producto + transactionId (formato anterior)
       const premiumData = {
         isPremium: true,
-        productId: product.id,
-        transactionId,
+        productId: data.id,
+        transactionId: data.transactionId || `paypal_${Date.now()}`,
         purchaseDate: new Date().toISOString(),
-        expiryDate: this.calculateExpiryDate(product),
-        type: product.type
+        expiryDate: this.calculateExpiryDate(data, data.transactionId || `paypal_${Date.now()}`),
+        type: data.type
       };
 
       await AsyncStorage.setItem('premium_state', JSON.stringify(premiumData));
@@ -359,10 +367,13 @@ export class PayPalService {
   /**
    * Calcula la fecha de expiración basada en el tipo de producto
    */
-  private static calculateExpiryDate(product: PayPalProduct): string {
+  private static calculateExpiryDate(product: PayPalProduct, transactionId: string): string {
     const now = new Date();
     
-    if (product.type === 'monthly') {
+    // Si es un trial, expira en 3 días
+    if (transactionId && transactionId.startsWith('trial_')) {
+      now.setDate(now.getDate() + 3);
+    } else if (product.type === 'monthly') {
       now.setMonth(now.getMonth() + 1);
     } else if (product.type === 'yearly') {
       now.setFullYear(now.getFullYear() + 1);
@@ -378,6 +389,9 @@ export class PayPalService {
     isPremium: boolean;
     expiryDate?: string;
     productType?: string;
+    transactionId?: string;
+    productId?: string;
+    purchaseDate?: string;
   }> {
     try {
       const premiumDataStr = await AsyncStorage.getItem('premium_state');
@@ -398,9 +412,12 @@ export class PayPalService {
       }
 
       return {
-        isPremium: true,
+        isPremium: premiumData.isPremium || true,
         expiryDate: premiumData.expiryDate,
-        productType: premiumData.type
+        productType: premiumData.type,
+        transactionId: premiumData.transactionId,
+        productId: premiumData.productId,
+        purchaseDate: premiumData.purchaseDate
       };
     } catch (error) {
       console.error('❌ Error getting premium status:', error);

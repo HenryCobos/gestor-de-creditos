@@ -7,7 +7,6 @@ interface SimplePaywallProps {
   visible: boolean;
   onClose: () => void;
   onSelect: (plan: PricingPlan) => void;
-  onStartTrial: () => void;
   context?: {
     currentUsage?: number;
     limit?: number;
@@ -21,7 +20,6 @@ export const SimplePaywall: React.FC<SimplePaywallProps> = ({
   visible,
   onClose,
   onSelect,
-  onStartTrial,
   context
 }) => {
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
@@ -43,20 +41,6 @@ export const SimplePaywall: React.FC<SimplePaywallProps> = ({
     }
   };
 
-  const handleStartTrial = async () => {
-    console.log('🎁 Iniciando trial desde SimplePaywall');
-    setIsProcessing(true);
-    
-    try {
-      await onStartTrial();
-      // No cerramos aquí - el hook useContextualPaywall se encarga de cerrar si es exitoso
-    } catch (error) {
-      console.error('❌ Error al iniciar trial:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   if (!visible) return null;
 
   return (
@@ -67,38 +51,21 @@ export const SimplePaywall: React.FC<SimplePaywallProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <TouchableOpacity 
-          style={styles.overlayTouchable} 
-          activeOpacity={1} 
-          onPress={onClose}
-        />
         <View style={styles.container}>
-          {/* Header fijo */}
+          {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
             <View style={styles.iconContainer}>
-              <Text style={styles.icon}>🚀</Text>
+              <Text style={styles.icon}>⭐</Text>
             </View>
-            <Text style={styles.title}>¡Casi alcanzas el límite!</Text>
-            <Text style={styles.subtitle}>
-              {context?.currentUsage !== undefined && context?.limit !== undefined && context?.featureName 
-                ? `Has usado ${context.currentUsage} de ${context.limit} ${context.featureName.toLowerCase()}`
-                : 'Mejora a Premium para acceso ilimitado'
-              }
+            <Text style={styles.title}>
+              {context?.featureName ? `${context.featureName} es Premium` : 'Funciones Premium'}
             </Text>
-          </View>
-
-          {/* Contenido scrolleable */}
-          <ScrollView 
-            style={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContainer}
-            bounces={false}
-          >
-            {/* Progress Bar */}
-            {context?.currentUsage !== undefined && context?.limit !== undefined && (
+            <Text style={styles.subtitle}>
+              Desbloquea todas las funciones premium
+            </Text>
+            
+            {/* Barra de progreso si hay contexto */}
+            {context && context.currentUsage !== undefined && context.limit !== undefined && (
               <View style={styles.progressContainer}>
                 <View style={styles.progressBar}>
                   <View 
@@ -109,133 +76,111 @@ export const SimplePaywall: React.FC<SimplePaywallProps> = ({
                   />
                 </View>
                 <Text style={styles.progressText}>
-                  {Math.round((context.currentUsage / context.limit) * 100)}% utilizado
+                  {context.currentUsage} de {context.limit} utilizados
                 </Text>
               </View>
             )}
+          </View>
 
-            {/* Benefits */}
-            <View style={styles.benefitsContainer}>
-              <Text style={styles.benefitsTitle}>Con Premium obtienes:</Text>
+          {/* Beneficios */}
+          <View style={styles.benefitsContainer}>
+            <Text style={styles.benefitsTitle}>Con Premium obtienes:</Text>
+            
+            <View style={styles.benefitsGrid}>
               <View style={styles.benefitItem}>
-                <Text style={styles.benefitIcon}>✅</Text>
-                <Text style={styles.benefitText}>Clientes y préstamos ilimitados</Text>
+                <Text style={styles.benefitIcon}>👥</Text>
+                <Text style={styles.benefitText}>Clientes ilimitados</Text>
               </View>
+              
               <View style={styles.benefitItem}>
-                <Text style={styles.benefitIcon}>✅</Text>
-                <Text style={styles.benefitText}>Reportes completos con gráficos</Text>
+                <Text style={styles.benefitIcon}>💰</Text>
+                <Text style={styles.benefitText}>Préstamos ilimitados</Text>
               </View>
+              
               <View style={styles.benefitItem}>
-                <Text style={styles.benefitIcon}>✅</Text>
+                <Text style={styles.benefitIcon}>📄</Text>
                 <Text style={styles.benefitText}>Exportación de reportes en PDF</Text>
               </View>
-              <View style={styles.benefitItem}>
-                <Text style={styles.benefitIcon}>✅</Text>
-                <Text style={styles.benefitText}>Notificaciones personalizadas</Text>
-              </View>
             </View>
+          </View>
 
-            {/* Plans */}
-            <View style={styles.plansContainer}>
-              <Text style={styles.plansTitle}>Elige tu plan:</Text>
-              
-              {plans.map((plan) => (
-                <TouchableOpacity
-                  key={plan.id}
-                  style={[
-                    styles.planCard,
-                    plan.isPopular && styles.popularPlan,
-                    selectedPlan?.id === plan.id && styles.selectedPlan,
-                    isProcessing && styles.planCardDisabled
-                  ]}
-                  onPress={() => handleSelectPlan(plan)}
-                  disabled={isProcessing}
-                >
-                  {plan.isPopular && (
-                    <View style={styles.popularBadge}>
-                      <Text style={styles.popularText}>MEJOR OPCIÓN</Text>
-                    </View>
-                  )}
-                  
-                  <View style={styles.planContent}>
-                    <Text style={styles.planName}>{plan.name}</Text>
-                    <View style={styles.priceContainer}>
-                      <Text style={styles.planPrice}>
-                        {PricingService.formatPrice(plan.price)}
-                      </Text>
-                      <Text style={styles.pricePeriod}>
-                        {plan.period === 'yearly' ? 'por año' : 'por mes'}
-                      </Text>
-                      {plan.period === 'yearly' && (
-                        <Text style={styles.pricePerMonth}>
-                          /mes ({PricingService.formatPrice(PricingService.getPricePerMonth(plan.price))})
-                        </Text>
-                      )}
-                    </View>
-                    {plan.savings && (
-                      <Text style={styles.savingsText}>
-                        Ahorras {PricingService.formatPrice(plan.savings)} al año
-                      </Text>
-                    )}
-                    <Text style={styles.subscriptionInfo}>
-                      Suscripción auto-renovable {plan.period === 'yearly' ? 'anual' : 'mensual'}
-                    </Text>
-                  </View>
-                  
-                  <View style={styles.planArrow}>
-                    <Text style={styles.arrowText}>→</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Trial Option */}
-            <View style={styles.trialContainer}>
-              <Text style={styles.trialText}>¿No estás seguro?</Text>
+          {/* Planes */}
+          <View style={styles.plansContainer}>
+            <Text style={styles.plansTitle}>Elige tu plan:</Text>
+            
+            {plans.map((plan) => (
               <TouchableOpacity 
-                style={[styles.trialButton, isProcessing && styles.trialButtonDisabled]} 
-                onPress={handleStartTrial}
+                key={plan.id}
+                style={[
+                  styles.planButton,
+                  plan.isPopular && styles.popularPlan
+                ]}
+                onPress={() => handleSelectPlan(plan)}
                 disabled={isProcessing}
               >
-                <Text style={styles.trialButtonText}>
-                  {isProcessing ? 'Procesando...' : 'Probar 3 días gratis'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Loading Overlay */}
-            {isProcessing && (
-              <View style={styles.loadingOverlay}>
-                <View style={styles.loadingBox}>
-                  <Text style={styles.loadingText}>Procesando compra...</Text>
-                  <Text style={styles.loadingSubText}>Por favor espera</Text>
+                {plan.isPopular && (
+                  <View style={styles.popularBadge}>
+                    <Text style={styles.popularText}>🔥 MEJOR OPCIÓN</Text>
+                  </View>
+                )}
+                
+                <View style={styles.planContent}>
+                  <Text style={styles.planName}>{plan.name}</Text>
+                  <Text style={styles.planPrice}>
+                    USD {plan.price.toFixed(2)}
+                  </Text>
+                  <Text style={styles.planPeriod}>
+                    {plan.period === 'yearly' ? 'por año' : 'por mes'}
+                  </Text>
+                  {plan.period === 'yearly' && (
+                    <Text style={styles.planPerMonth}>
+                      /mes (USD {(plan.price / 12).toFixed(2)})
+                    </Text>
+                  )}
+                  {plan.period === 'yearly' && (
+                    <Text style={styles.savingsText}>Ahorras con el plan anual</Text>
+                  )}
                 </View>
-              </View>
-            )}
-          </ScrollView>
+                
+                <Text style={styles.planArrow}>→</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-          {/* Footer fijo */}
+          {/* Trial Button - Build 156 Version */}
+          <View style={styles.trialContainer}>
+            <TouchableOpacity 
+              style={styles.trialButton}
+              onPress={() => {
+                // Buscar el plan mensual para el trial
+                const monthlyPlan = plans.find(p => p.period === 'monthly');
+                if (monthlyPlan) {
+                  handleSelectPlan(monthlyPlan);
+                }
+              }}
+              disabled={isProcessing}
+            >
+              <Text style={styles.trialButtonText}>
+                Iniciar prueba GRATIS de 3 días
+              </Text>
+            </TouchableOpacity>
+            
+            {/* Trial Disclosure - Build 156 Requirement */}
+            <Text style={styles.trialDisclosure}>
+              Después del período de prueba gratuita de 3 días, se cobrará automáticamente USD 9.99/mes. 
+              Cancela en cualquier momento antes de que termine el período de prueba para evitar cargos.
+            </Text>
+          </View>
+
+          {/* Footer */}
           <View style={styles.footer}>
-            <View style={styles.legalContainer}>
-              <Text style={styles.legalText}>
-                Al suscribirte aceptas nuestros
-                {' '}<Text style={styles.link} onPress={() => {
-                  const { Linking } = require('react-native');
-                  Linking.openURL('https://gestordecreditos.netlify.app/TERMINOS_SERVICIO.md');
-                }}>Términos de Uso</Text>
-                {' '}y la{' '}
-                <Text style={styles.link} onPress={() => {
-                  const { Linking } = require('react-native');
-                  Linking.openURL('https://gestordecreditos.netlify.app/POLITICA_PRIVACIDAD.md');
-                }}>Política de Privacidad</Text>.
-              </Text>
-              <Text style={styles.legalSubText}>
-                Renovación automática salvo cancelación 24 h antes del final del período.
-                Gestiona tu suscripción en Ajustes de Apple ID. El cobro lo realiza Apple.
-              </Text>
-            </View>
-            <TouchableOpacity style={styles.laterButton} onPress={onClose}>
-              <Text style={styles.laterButtonText}>Tal vez después</Text>
+            <Text style={styles.legalText}>
+              Al suscribirte aceptas nuestros Términos de Uso y la Política de Privacidad. 
+              La suscripción se renueva automáticamente salvo cancelación al menos 24 horas antes del fin del período. 
+              La gestión y cancelación se realiza a través de PayPal. El cobro se realiza a tu cuenta de PayPal al confirmar la compra.
+            </Text>
+            <TouchableOpacity onPress={onClose} style={styles.footerButton}>
+              <Text style={styles.footerButtonText}>Tal vez después</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -247,322 +192,244 @@ export const SimplePaywall: React.FC<SimplePaywallProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  overlayTouchable: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
   container: {
     backgroundColor: '#fff',
-    borderRadius: 20,
+    borderRadius: 12,
     width: '100%',
-    height: height * 0.9,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
+    maxHeight: height * 0.85,
     overflow: 'hidden',
   },
   header: {
-    alignItems: 'center',
     paddingTop: 20,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingBottom: 12,
     backgroundColor: '#fff',
-  },
-  scrollContent: {
-    flex: 1,
-  },
-  scrollContainer: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    flexGrow: 1,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#f39c12',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   icon: {
-    fontSize: 30,
+    fontSize: 28,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: 'bold',
     color: '#2c3e50',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#7f8c8d',
     textAlign: 'center',
   },
   progressContainer: {
-    marginBottom: 20,
+    width: '100%',
+    marginTop: 8,
   },
   progressBar: {
-    height: 8,
-    backgroundColor: '#e9ecef',
-    borderRadius: 4,
+    height: 4,
+    backgroundColor: '#ecf0f1',
+    borderRadius: 2,
     overflow: 'hidden',
-    marginBottom: 8,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#f39c12',
-    borderRadius: 4,
+    backgroundColor: '#3498db',
+    borderRadius: 2,
   },
   progressText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#7f8c8d',
     textAlign: 'center',
+    marginTop: 4,
   },
   benefitsContainer: {
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#f8f9fa',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   benefitsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#2c3e50',
-    marginBottom: 16,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#34495e',
+    marginBottom: 10,
     textAlign: 'center',
+  },
+  benefitsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   benefitItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    marginBottom: 6,
+    width: '48%',
+    marginBottom: 8,
+    paddingHorizontal: 8,
   },
   benefitIcon: {
-    fontSize: 16,
-    marginRight: 12,
+    fontSize: 18,
+    marginRight: 8,
   },
   benefitText: {
-    flex: 1,
     fontSize: 14,
-    color: '#2c3e50',
-    fontWeight: '500',
+    color: '#34495e',
+    flex: 1,
   },
   plansContainer: {
-    marginBottom: 16,
+    padding: 20,
+    backgroundColor: '#fff',
   },
   plansTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
     color: '#2c3e50',
     marginBottom: 12,
     textAlign: 'center',
   },
-  planCard: {
+  planButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
+    backgroundColor: '#ecf0f1',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 10,
     borderWidth: 2,
     borderColor: 'transparent',
-    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   popularPlan: {
-    borderColor: '#3498db',
-    backgroundColor: '#f8f9ff',
-  },
-  selectedPlan: {
-    borderColor: '#27ae60',
-    backgroundColor: '#f0fff4',
-  },
-  planCardDisabled: {
-    opacity: 0.5,
+    borderColor: '#e74c3c',
+    backgroundColor: '#fdf2f2',
   },
   popularBadge: {
     position: 'absolute',
-    top: -8,
-    right: 12,
-    backgroundColor: '#3498db',
+    top: -10,
+    right: 15,
+    backgroundColor: '#e74c3c',
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    zIndex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   popularText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
+    textTransform: 'uppercase',
   },
   planContent: {
     flex: 1,
   },
   planName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#2c3e50',
-    marginBottom: 4,
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
   },
   planPrice: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#27ae60',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#3498db',
+    marginTop: 2,
   },
-  pricePerMonth: {
+  planPeriod: {
+    fontSize: 13,
+    color: '#7f8c8d',
+  },
+  planPerMonth: {
     fontSize: 12,
     color: '#7f8c8d',
-    marginLeft: 4,
-  },
-  pricePeriod: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    marginLeft: 4,
-  },
-  subscriptionInfo: {
-    fontSize: 11,
-    color: '#95a5a6',
-    marginTop: 4,
-    fontStyle: 'italic',
+    marginTop: 1,
   },
   savingsText: {
     fontSize: 12,
     color: '#27ae60',
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: 3,
   },
   planArrow: {
+    fontSize: 18,
+    color: '#3498db',
     marginLeft: 8,
   },
-  arrowText: {
-    fontSize: 18,
-    color: '#3498db',
-    fontWeight: '600',
-  },
   trialContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  trialText: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginBottom: 8,
-  },
-  trialButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#3498db',
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  trialButtonText: {
-    color: '#3498db',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  trialButtonDisabled: {
-    opacity: 0.5,
-    borderColor: '#95a5a6',
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  loadingBox: {
-    backgroundColor: '#fff',
-    padding: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  loadingText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 8,
-  },
-  loadingSubText: {
-    fontSize: 14,
-    color: '#7f8c8d',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: '#7f8c8d',
-    fontWeight: 'bold',
-  },
-  footer: {
-    paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     alignItems: 'center',
   },
-  legalContainer: {
-    paddingBottom: 8,
+  trialButton: {
+    backgroundColor: '#27ae60',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    width: '100%',
+    alignItems: 'center',
+  },
+  trialButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  trialDisclosure: {
+    fontSize: 11,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    lineHeight: 16,
+    paddingHorizontal: 10,
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#f8f9fa',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    alignItems: 'center',
   },
   legalText: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 10,
+    color: '#7f8c8d',
     textAlign: 'center',
+    marginBottom: 10,
+    lineHeight: 14,
   },
-  link: {
-    color: '#1976D2',
-    textDecorationLine: 'underline',
+  footerButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  legalSubText: {
-    fontSize: 11,
-    color: '#8a8a8a',
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 16,
-  },
-  laterButton: {
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  laterButtonText: {
-    color: '#95a5a6',
+  footerButtonText: {
     fontSize: 14,
-    fontWeight: '500',
+    color: '#3498db',
+    fontWeight: '600',
   },
 });

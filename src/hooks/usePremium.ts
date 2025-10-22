@@ -6,6 +6,7 @@ import { AnalyticsService } from '../services/analytics';
 import { userService } from '../services/userService';
 import { DevToolsService } from '../services/devTools';
 import { ReviewService } from '../services/reviewService';
+import { webViewService } from '../services/webViewService';
 
 interface UsePremiumState {
   isPremium: boolean;
@@ -57,18 +58,16 @@ export function usePremium() {
   // Función para actualizar el estado premium
   const updatePremiumState = useCallback(async () => {
     try {
-      console.log('🔄 Actualizando estado premium con PayPal...');
-      
       const premiumStatus = await PayPalService.getPremiumStatus();
       
-      console.log('📊 Estado premium detectado:', premiumStatus);
-      
       setState((s) => {
-        console.log('🔄 Estado premium actualizado:', { 
-          anterior: s.isPremium, 
-          nuevo: premiumStatus.isPremium,
-          cambió: s.isPremium !== premiumStatus.isPremium 
-        });
+        const changed = s.isPremium !== premiumStatus.isPremium;
+        if (changed) {
+          console.log('🔄 Estado premium actualizado:', { 
+            anterior: s.isPremium, 
+            nuevo: premiumStatus.isPremium
+          });
+        }
         return { 
           ...s, 
           isPremium: premiumStatus.isPremium, 
@@ -85,18 +84,14 @@ export function usePremium() {
   useEffect(() => {
     (async () => {
       try {
-        console.log('🚀 Inicializando usePremium...');
-        
         // Inicializar herramientas de desarrollo
         await DevToolsService.initialize();
         
         // Verificar si debemos simular premium
         const shouldSimulate = DevToolsService.shouldSimulatePremium();
-        console.log('🔧 Modo simulación:', shouldSimulate);
         
         if (shouldSimulate) {
           // Modo simulación
-          console.log('🎭 Activando modo simulación premium');
           setState((s) => ({ 
             ...s, 
             isPremium: true, 
@@ -107,52 +102,26 @@ export function usePremium() {
             offeringsLoaded: true,
           }));
           setPackages([]);
-          console.log('✅ Modo simulación configurado');
           return;
         }
 
         // Inicializar PayPal si no está inicializado
-        console.log('📱 Entorno:', { isDev: __DEV__ });
-        
         await PayPalService.initialize();
-        console.log('✅ PayPal inicializado en usePremium');
 
         // Cargar estado inicial
-        console.log('📊 Cargando estado premium...');
         await updatePremiumState();
 
-        console.log('📦 Obteniendo productos PayPal...');
         const pkgs = PayPalService.getProducts();
-        console.log('📦 Productos obtenidos:', pkgs.length);
-        
-        console.log('📦 Detalles COMPLETOS de productos:', JSON.stringify(pkgs.map((pkg: PayPalProduct) => ({
-          id: pkg.id,
-          name: pkg.name,
-          price: pkg.price,
-          currency: pkg.currency,
-          type: pkg.type
-        })), null, 2));
-        
-        console.log('💰 ANÁLISIS DE PRECIOS:');
-        pkgs.forEach((pkg: PayPalProduct) => {
-          console.log(`  - ${pkg.type}:`);
-          console.log(`    name: "${pkg.name}"`);
-          console.log(`    price: ${pkg.price}`);
-          console.log(`    currency: "${pkg.currency}"`);
-        });
-        
         setPackages(pkgs);
         setState((s) => ({ ...s, offeringsLoaded: true }));
-        console.log('✅ usePremium inicializado correctamente');
       } catch (e: any) {
         console.error('❌ Error en usePremium:', e);
         setState((s) => ({ ...s, error: e?.message ?? 'Error cargando compras' }));
       } finally {
-        console.log('🏁 Finalizando inicialización de usePremium');
         setState((s) => ({ ...s, loading: false }));
       }
     })();
-  }, [updatePremiumState]);
+  }, []); // Solo ejecutar una vez al montar
 
   // Permitir recargar explícitamente las ofertas (para botón Reintentar)
   const reloadOfferings = useCallback(async () => {
@@ -167,14 +136,14 @@ export function usePremium() {
     }
   }, []);
 
-  // Listener para actualizar estado premium cuando cambie
+  // Listener para actualizar estado premium cuando cambie - SIN dependencias para evitar bucle
   useEffect(() => {
     const interval = setInterval(() => {
       updatePremiumState();
-    }, 10000); // Verificar cada 10 segundos (menos frecuente)
+    }, 30000); // Verificar cada 30 segundos (menos frecuente)
 
     return () => clearInterval(interval);
-  }, [updatePremiumState]);
+  }, []); // Sin dependencias para evitar bucle infinito
 
   // Verificar milestone de Premium periódicamente (una vez al día)
   useEffect(() => {
@@ -209,7 +178,18 @@ export function usePremium() {
       
       if (result.success) {
         if (result.requiresWebView && result.approvalUrl) {
-          console.log('🌐 Pago requiere WebView, guardando estado pendiente');
+          console.log('🌐 Pago requiere WebView, usando servicio global');
+          console.log('🌐 Guardando pendingPayment:', {
+            product: pkg,
+            result: result
+          });
+          
+          // Usar el servicio global para mostrar el WebView
+          webViewService.showWebView({
+            approvalUrl: result.approvalUrl,
+            orderId: result.orderId || '',
+            product: pkg
+          });
           
           setState((s) => ({ 
             ...s, 
@@ -258,7 +238,7 @@ export function usePremium() {
       setState((s) => ({ ...s, error: errorMessage, loading: false }));
       return { success: false, error: { message: errorMessage } } as const;
     }
-  }, [updatePremiumState]);
+  }, []); // Sin dependencias para evitar bucle infinito
 
   const completePaymentFromWebView = useCallback(async (transactionId: string, product: PayPalProduct) => {
     console.log('🎉 Completando pago desde WebView:', transactionId);
@@ -272,7 +252,14 @@ export function usePremium() {
         
         // Guardar estado premium en AsyncStorage ANTES de actualizar el estado
         if (captureResult.transactionId) {
-          await PayPalService.savePremiumState(product, captureResult.transactionId);
+          await PayPalService.savePremiumState({
+            isPremium: true,
+            productId: product.id,
+            transactionId: captureResult.transactionId,
+            purchaseDate: new Date().toISOString(),
+            expiryDate: new Date(Date.now() + (product.type === 'monthly' ? 30 : 365) * 24 * 60 * 60 * 1000).toISOString(),
+            type: product.type
+          });
           console.log('💾 Estado premium guardado en AsyncStorage');
         } else {
           console.warn('⚠️ No se pudo guardar estado premium: transactionId no disponible');
@@ -350,93 +337,102 @@ export function usePremium() {
     } finally {
       setState((s) => ({ ...s, loading: false }));
     }
-  }, [updatePremiumState]);
+  }, []); // Sin dependencias para evitar bucle infinito
 
   const startTrial = useCallback(async () => {
-    console.log('🎁 startTrial llamado');
     setState((s) => ({ ...s, loading: true, error: null }));
     
     // Timeout de seguridad para resetear loading
     const timeoutId = setTimeout(() => {
-      console.log('⏰ Timeout de seguridad - reseteando loading');
       setState((s) => ({ ...s, loading: false }));
     }, 10000); // 10 segundos timeout
     
     try {
-      // En producción, el trial gratuito debe ser una suscripción real con período de prueba
-      // Buscar el paquete con trial gratuito (generalmente el mensual)
+      // Buscar el paquete mensual para el trial
       const trialPackage = packages.find(pkg => 
         pkg.type === 'monthly' || 
         pkg.id.includes('monthly')
       );
       
-      console.log('🎁 Paquetes disponibles:', packages.length);
-      console.log('🎁 Trial package encontrado:', !!trialPackage);
-      
       if (!trialPackage) {
-        console.log('⚠️ No se encontró producto mensual, usando trial simulado');
         // Si no hay paquetes reales, simular el trial
+        const trialData = {
+          isPremium: false, // IMPORTANTE: Trial NO activa premium inmediatamente
+          transactionId: `trial_${Date.now()}`,
+          expiryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 días
+          productType: 'monthly',
+          type: 'trial'
+        };
+        
+        await PayPalService.savePremiumState(trialData);
+        
         setState((s) => ({ 
           ...s, 
-          isPremium: true, 
+          isPremium: false, // Trial NO activa premium
           subscriptionStatus: 'trial',
           trialDaysRemaining: 3,
           canStartTrial: false,
-          loading: false
+          loading: false,
+          expiryDate: trialData.expiryDate,
+          productType: trialData.productType,
+          customerInfo: trialData
         }));
         
         // Programar notificaciones de trial
-        await TrialNotificationService.startTrial();
+        await TrialNotificationService.scheduleTrialNotifications();
         
         // Trackear inicio de trial
-        await AnalyticsService.trackTrialStarted();
+        AnalyticsService.trackEvent('trial_started', { trialDays: 3 });
         
-        console.log('✅ Trial gratuito simulado iniciado exitosamente');
         return { success: true } as const;
       }
       
-      console.log('🎁 Iniciando trial gratuito con producto:', trialPackage.id);
+      // Usar el paquete mensual real para el trial
+      const trialData = {
+        isPremium: false, // IMPORTANTE: Trial NO activa premium inmediatamente
+        transactionId: `trial_${Date.now()}`,
+        expiryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 días
+        productType: trialPackage.type,
+        type: 'trial'
+      };
       
-      // Procesar pago del trial (simulado en desarrollo)
-      const result = await PayPalService.processPayment(trialPackage);
+      await PayPalService.savePremiumState(trialData);
       
-      if (result.success) {
-        console.log('🎁 Resultado de trial exitoso:', result.transactionId);
+      setState((s) => ({ 
+        ...s, 
+        isPremium: false, // Trial NO activa premium
+        subscriptionStatus: 'trial',
+        trialDaysRemaining: 3,
+        canStartTrial: false,
+        loading: false,
+        expiryDate: trialData.expiryDate,
+        productType: trialData.productType,
+        customerInfo: trialData
+      }));
       
-        setState((s) => ({ 
-          ...s, 
-          isPremium: true, 
-          customerInfo: { transactionId: result.transactionId, product: trialPackage },
-          subscriptionStatus: 'trial',
-          trialDaysRemaining: 3,
-          canStartTrial: false
-        }));
+      // Programar notificaciones de trial
+      await TrialNotificationService.scheduleTrialNotifications();
       
-        // Actualizar estado premium inmediatamente
-        await updatePremiumState();
-        
-        // Programar notificaciones de trial
-        await TrialNotificationService.startTrial();
-        
-        // Trackear inicio de trial
-        await AnalyticsService.trackTrialStarted();
-        
-        console.log('✅ Trial gratuito iniciado exitosamente');
-        
-        return { success: true } as const;
-      } else {
-        throw new Error(result.error || 'Trial falló');
-      }
+      // Trackear inicio de trial
+      AnalyticsService.trackEvent('trial_started', { trialDays: 3 });
+      
+      return { success: true } as const;
     } catch (e: any) {
       console.error('❌ Error iniciando trial gratuito:', e);
       setState((s) => ({ ...s, error: e?.message ?? 'No se pudo iniciar el trial gratuito' }));
       return { success: false, error: e } as const;
     } finally {
       clearTimeout(timeoutId);
-      console.log('🏁 Finalizando trial - reseteando loading');
       setState((s) => ({ ...s, loading: false }));
     }
-  }, [packages, updatePremiumState]);
+  }, [packages]); // Solo packages, sin updatePremiumState para evitar bucle
+
+  // Log del estado antes de retornar - REDUCIDO para evitar spam
+  // console.log('🔄 usePremium retornando estado:', {
+  //   pendingPayment: state.pendingPayment,
+  //   isPremium: state.isPremium,
+  //   loading: state.loading
+  // });
 
   return {
     isPremium: state.isPremium,

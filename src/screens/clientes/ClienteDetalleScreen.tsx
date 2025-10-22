@@ -14,7 +14,7 @@ import {
   EmptyState, 
   Badge,
   PrestamoCard,
-  SimplePaywall 
+  ContextualPaywall 
 } from '../../components';
 import { formatearFecha } from '../../utils/dateUtils';
 
@@ -313,12 +313,35 @@ export function ClienteDetalleScreen() {
         )}
       </Card>
     </ScrollView>
-    <SimplePaywall
+    <ContextualPaywall
       visible={contextualPaywall.visible}
       onClose={contextualPaywall.hidePaywall}
-      onSelect={contextualPaywall.handleSubscribe}
-      onStartTrial={contextualPaywall.handleStartTrial}
-      context={contextualPaywall.context || undefined}
+      packages={contextualPaywall.packages}
+      loading={contextualPaywall.loading}
+      error={contextualPaywall.error}
+      onSelect={(pkg) => {
+        // Convertir PayPalProduct a PricingPlan para handleSubscribe
+        const plan = {
+          id: pkg.id,
+          name: pkg.type === 'monthly' ? 'Mensual' : 'Anual',
+          price: pkg.price,
+          period: pkg.type === 'monthly' ? 'monthly' as const : 'yearly' as const,
+          revenueCatId: pkg.id,
+          features: [], // Características del plan
+        };
+        contextualPaywall.handleSubscribe(plan);
+      }}
+      onRestore={contextualPaywall.handleRestore}
+      onRetry={contextualPaywall.handleRetry}
+      context={contextualPaywall.context || {
+        title: '',
+        message: '',
+        icon: '',
+        featureName: '',
+      }}
+      pendingPayment={contextualPaywall.pendingPayment}
+      onCompletePayment={contextualPaywall.onCompletePayment}
+      onCancelPayment={contextualPaywall.onCancelPayment}
     />
   </View>
   );

@@ -69,15 +69,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       actionText: 'Ver Beneficios Premium',
     },
     {
-      id: 'trial',
-      title: 'Prueba Gratis',
-      subtitle: '3 días gratis para explorar Premium',
-      description: 'Prueba todas las funciones premium sin compromiso. Cancela cuando quieras.',
-      icon: '🎁',
-      isPremium: true,
-      actionText: 'Comenzar Trial Gratis',
-    },
-    {
       id: 'ready',
       title: '¡Estás listo!',
       subtitle: 'Comienza a gestionar tus préstamos',
@@ -121,8 +112,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         icon: '💎',
         featureName: 'Premium',
       });
-    } else if (step.id === 'trial') {
-      premium.startTrial();
     } else if (step.id === 'ready') {
       onComplete();
     }
@@ -145,8 +134,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       case 'features':
         return 'Continuar';
       case 'premium_benefits':
-        return 'Continuar';
-      case 'trial':
         return 'Continuar';
       case 'ready':
         return 'Empezar a Usar';
@@ -261,7 +248,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         onClose={contextualPaywall.hidePaywall}
         packages={contextualPaywall.packages}
         loading={contextualPaywall.loading}
-        error={contextualPaywall.error}
+        error={contextualPaywall.error || undefined}
         onSelect={(pkg) => {
           // Convertir PayPalProduct a PricingPlan para handleSubscribe
           const plan = {
@@ -275,7 +262,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
           contextualPaywall.handleSubscribe(plan);
         }}
         onRestore={contextualPaywall.handleRestore}
-        onStartTrial={contextualPaywall.handleStartTrial}
         onRetry={contextualPaywall.handleRetry}
         context={contextualPaywall.context || {
           title: '',

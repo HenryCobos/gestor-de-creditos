@@ -1,151 +1,93 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
-import { Card, Button, PremiumBadge } from '../ui';
-import { PayPalWebView } from './PayPalWebView';
+import React from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions } from 'react-native';
+import { PayPalProduct } from '../../services/payments';
 
-// Definir tipo local para PayPal
-interface PayPalProduct {
-  id: string;
-  name: string;
-  price: number;
-  currency: string;
-  type: 'monthly' | 'yearly';
+interface PaywallContext {
+  title: string;
+  message: string;
+  icon: string;
+  featureName: string;
+  currentUsage?: number;
+  limit?: number;
 }
 
 interface ContextualPaywallProps {
   visible: boolean;
   onClose: () => void;
-  packages: PayPalProduct[];
-  loading: boolean;
-  onSelect: (pkg: PayPalProduct) => void;
-  onRestore: () => void;
-  onStartTrial?: () => void;
+  onSelect: (product: PayPalProduct) => void;
+  loading?: boolean;
+  error?: string;
+  packages?: PayPalProduct[];
+  context?: PaywallContext;
   onRetry?: () => void;
-  error?: string | null;
-  context: {
-    title: string;
-    message: string;
-    icon: string;
-    featureName: string;
-    currentUsage?: number;
-    limit?: number;
-  };
-  pendingPayment?: {
-    product: PayPalProduct;
-    result: any;
-  };
-  onCompletePayment?: (transactionId: string, product: PayPalProduct) => void;
-  onCancelPayment?: () => void;
+  onRestore?: () => void;
+  pendingPayment?: any;
+  onCompletePayment?: (transactionId: string, product: any) => Promise<void>;
+  onCancelPayment?: (transactionId?: string, product?: any) => void | Promise<void>;
 }
 
 const { width, height } = Dimensions.get('window');
 
-export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
+const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
   visible,
   onClose,
-  packages,
-  loading,
   onSelect,
-  onRestore,
-  onStartTrial,
-  onRetry,
+  loading = false,
   error,
+  packages = [],
   context,
+  onRetry,
+  onRestore,
   pendingPayment,
   onCompletePayment,
-  onCancelPayment,
+  onCancelPayment
 }) => {
-  const isNearLimit = context.currentUsage && context.limit 
-    ? context.currentUsage >= context.limit * 0.8 
-    : false;
-  
-  const [showPayPalWebView, setShowPayPalWebView] = useState(false);
-  
-  const [showSuccess, setShowSuccess] = useState(false);
-
-  // Manejar pago pendiente
-  React.useEffect(() => {
-    if (pendingPayment && pendingPayment.result && pendingPayment.result.approvalUrl) {
-      console.log('🌐 Abriendo PayPal WebView para pago pendiente');
-      setShowPayPalWebView(true);
-    }
-  }, [pendingPayment]);
-
-  // Callbacks para PayPal WebView
-  const handlePayPalSuccess = (transactionId: string) => {
-    console.log('✅ Pago exitoso desde WebView:', transactionId);
-    setShowPayPalWebView(false);
-    if (pendingPayment && onCompletePayment) {
-      onCompletePayment(transactionId, pendingPayment.product);
-    }
+  const formatPrice = (price: number, currency: string) => {
+    return `${currency} ${price.toFixed(2)}`;
   };
 
-  const handlePayPalCancel = () => {
-    console.log('❌ Pago cancelado desde WebView');
-    setShowPayPalWebView(false);
-    if (onCancelPayment) {
-      onCancelPayment();
-    }
+  const monthlyProduct: PayPalProduct = {
+    id: 'P-5XJ99625GT120133NNDZHG3Y', // ID real de PayPal - Plan Mensual
+    name: 'Plan Mensual Premium - Gestor de Créditos',
+    price: 9.99,
+    currency: 'USD',
+    type: 'monthly'
   };
 
-  const handlePayPalClose = () => {
-    console.log('🚪 Cerrando PayPal WebView');
-    setShowPayPalWebView(false);
-    if (onCancelPayment) {
-      onCancelPayment();
-    }
+  const yearlyProduct: PayPalProduct = {
+    id: 'P-6GH417601N8335719NDZHHYI', // ID real de PayPal - Plan Anual
+    name: 'Plan Anual Premium - Gestor de Créditos',
+    price: 59.99,
+    currency: 'USD',
+    type: 'yearly'
   };
 
-  // Función helper para formatear precios con símbolo de moneda correcto
-  const formatPrice = (price: number, currency: string): string => {
-    try {
-      if (!currency) {
-        console.warn('⚠️ Sin currency, usando formato USD');
-        return `$${price.toFixed(2)}`;
-      }
-      
-      console.log(`💱 Formateando precio: ${price} ${currency}`);
-      
-      // Usar Intl.NumberFormat para obtener el formato correcto según la moneda
-      const formatter = new Intl.NumberFormat('es-419', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-      
-      const formatted = formatter.format(price);
-      console.log(`💱 Precio formateado: ${formatted}`);
-      return formatted;
-    } catch (error) {
-      console.error('❌ Error formateando precio:', error);
-      return `$${price.toFixed(2)}`;
-    }
-  };
+  if (!visible) return null;
 
   return (
-    <>
       <Modal
-        visible={visible}
         animationType="slide"
         transparent={true}
+      visible={visible}
         onRequestClose={onClose}
       >
       <View style={styles.overlay}>
         <View style={styles.container}>
-          {/* Header fijo */}
+          {/* Header */}
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <Text style={styles.icon}>{context.icon}</Text>
+              <Text style={styles.icon}>📊</Text>
             </View>
-            <Text style={styles.title}>{context.title}</Text>
-            <Text style={styles.message}>{context.message}</Text>
+            <Text style={styles.title}>
+              {context?.title || 'Reportes avanzados son Premium'}
+            </Text>
+            <Text style={styles.subtitle}>
+              {context?.message || 'Desbloquea todas las funciones premium'}
+            </Text>
             
-            {isNearLimit && context.currentUsage && context.limit && (
-              <View style={styles.limitWarning}>
-                <Text style={styles.limitText}>
-                  Has usado {context.currentUsage} de {context.limit} {context.featureName.toLowerCase()}
-                </Text>
+            {/* Barra de progreso si hay contexto */}
+            {context && context.currentUsage !== undefined && context.limit !== undefined && (
+              <View style={styles.progressContainer}>
                 <View style={styles.progressBar}>
                   <View 
                     style={[
@@ -158,542 +100,307 @@ export const ContextualPaywall: React.FC<ContextualPaywallProps> = ({
             )}
           </View>
 
-          {/* Contenido scrolleable */}
-          <ScrollView 
-            style={styles.scrollContent}
-            showsVerticalScrollIndicator={true}
-            contentContainerStyle={styles.scrollContainer}
-            bounces={false}
-          >
+          {/* Beneficios */}
             <View style={styles.benefitsContainer}>
-              <Text style={styles.benefitsTitle}>Desbloquea límites con Premium</Text>
+            <Text style={styles.benefitsTitle}>Con Premium obtienes:</Text>
               
+            <View style={styles.benefitsGrid}>
               <View style={styles.benefitItem}>
-                <Text style={styles.benefitIcon}>🚀</Text>
-                <Text style={styles.benefitText}>
-                  Clientes y préstamos ilimitados
-                </Text>
+                <Text style={styles.benefitIcon}>👥</Text>
+                <Text style={styles.benefitText}>Clientes ilimitados</Text>
               </View>
               
               <View style={styles.benefitItem}>
-                <Text style={styles.benefitIcon}>📊</Text>
-                <Text style={styles.benefitText}>
-                  Reportes completos con gráficos
-                </Text>
+                <Text style={styles.benefitIcon}>💰</Text>
+                <Text style={styles.benefitText}>Préstamos ilimitados</Text>
               </View>
               
               <View style={styles.benefitItem}>
-                <Text style={styles.benefitIcon}>☁️</Text>
-                <Text style={styles.benefitText}>
-                  Exportación de reportes en PDF
-                </Text>
+                <Text style={styles.benefitIcon}>📄</Text>
+                <Text style={styles.benefitText}>Exportación de reportes en PDF</Text>
               </View>
-              
-              <View style={styles.benefitItem}>
-                <Text style={styles.benefitIcon}>🔔</Text>
-                <Text style={styles.benefitText}>
-                  Notificaciones personalizadas
-                </Text>
               </View>
             </View>
 
-            {loading && (
-              <View style={styles.loadingContainer}>
-                <View style={styles.loadingSpinner}>
-                  <Text style={styles.loadingSpinnerText}>⟳</Text>
-                </View>
-                <Text style={styles.loadingText}>Procesando compra...</Text>
-                <Text style={styles.loadingSubText}>Por favor espera mientras procesamos tu suscripción</Text>
-              </View>
-            )}
-
-            {error && !error.includes('already') && !error.includes('suscrito') && !error.includes('subscribed') && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorIcon}>⚠️</Text>
-                <Text style={styles.errorText}>{error}</Text>
-                <Text style={styles.errorSubText}>
-                  Por favor, verifica tu conexión e intenta de nuevo
-                </Text>
-                {onRetry && (
-                  <TouchableOpacity 
-                    style={styles.retryButton}
-                    onPress={onRetry}
-                  >
-                    <Text style={styles.retryButtonText}>🔄 Reintentar</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity 
-                  style={styles.debugButton}
-                  onPress={() => {
-                    console.log('🔍 DEBUG INFO:');
-                    console.log('📦 Packages:', packages);
-                    console.log('📦 Packages length:', packages?.length);
-                    console.log('📦 Packages details:', packages?.map(pkg => ({
-                      id: pkg.id,
-                      type: pkg.type,
-                      price: pkg.price,
-                      name: pkg.name
-                    })));
-                    console.log('⚠️ Error:', error);
-                    console.log('🔄 Loading:', loading);
-                    alert('Logs enviados a la consola. Revisa la consola de desarrollo.');
-                  }}
-                >
-                  <Text style={styles.debugButtonText}>🔍 Ver Logs</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Mostrar error si no hay productos válidos pero no hay error específico */}
-            {!error && packages && packages.length > 0 && !packages.every(pkg => 
-              pkg && pkg.id && pkg.type && pkg.price
-            ) && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorIcon}>⚠️</Text>
-                <Text style={styles.errorText}>Faltan algunos datos de los productos</Text>
-                <Text style={styles.errorSubText}>
-                  Intentaremos igualmente mostrar los planes disponibles
-                </Text>
-                {onRetry && (
-                  <TouchableOpacity 
-                    style={styles.retryButton}
-                    onPress={onRetry}
-                  >
-                    <Text style={styles.retryButtonText}>🔄 Reintentar</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-
-            {/* Oculto en producción/TestFlight */}
-            {__DEV__ && (
-              <TouchableOpacity 
-                style={styles.debugInfoButton}
-                onPress={() => {
-                  console.log('🔍 DEBUG INFO COMPLETO:');
-                  console.log('📦 Packages:', packages);
-                  console.log('📦 Packages length:', packages?.length);
-                  console.log('📦 Packages details:', packages?.map(pkg => ({
-                    id: pkg.id,
-                    type: pkg.type,
-                    price: pkg.price,
-                    name: pkg.name
-                  })));
-                  console.log('⚠️ Error:', error);
-                  console.log('🔄 Loading:', loading);
-                  console.log('🎯 Context:', context);
-                  alert(`Estado actual:\n- Productos: ${packages?.length || 0}\n- Error: ${error || 'Ninguno'}\n- Cargando: ${loading}\n\nRevisa la consola para más detalles.`);
-                }}
-              >
-                <Text style={styles.debugInfoButtonText}>🔍 Estado del Paywall</Text>
-              </TouchableOpacity>
-            )}
-
-            <View style={styles.packagesContainer}>
-              {(() => {
-                console.log('🔍 ContextualPaywall - packages recibidos:', packages);
-                console.log('🔍 ContextualPaywall - packages.length:', packages?.length);
-                console.log('🔍 ContextualPaywall - packages detalle:', packages?.map(pkg => ({
-                  id: pkg.id,
-                  type: pkg.type,
-                  price: pkg.price,
-                  name: pkg.name
-                })));
-                
-                // Verificar si hay productos válidos
-                const hasValidPackages = packages && packages.length > 0 && packages.every(pkg => 
-                  pkg && pkg.id && pkg.type && pkg.price
-                );
-                
-                console.log('🔍 ContextualPaywall - hasValidPackages:', hasValidPackages);
-                return hasValidPackages;
-              })() ? (
-                packages.map((pkg, index) => (
+          {/* Planes */}
+          <View style={styles.plansContainer}>
+            <Text style={styles.plansTitle}>Elige tu plan:</Text>
+            
+            {/* Mostrar planes de PayPal si están disponibles, sino mostrar fallback */}
+            {packages && packages.length > 0 ? (
+              packages.map((pkg) => (
                   <TouchableOpacity 
                     key={pkg.id}
                     style={[
-                      styles.package,
-                      pkg.type === 'yearly' && styles.recommendedPackage
+                    styles.planButton,
+                    pkg.type === 'yearly' && styles.recommendedPlan
                     ]}
                     onPress={() => {
+                    console.log('🎯 Plan PayPal seleccionado:', pkg);
                       onSelect(pkg);
                     }} 
                     disabled={loading}
                   >
                     {pkg.type === 'yearly' && (
                       <View style={styles.recommendedBadge}>
-                        <Text style={styles.recommendedText}>MEJOR OPCIÓN</Text>
+                      <Text style={styles.recommendedText}>🔥 MEJOR OPCIÓN</Text>
                       </View>
                     )}
-                    <View style={styles.packageContent}>
-                      <Text style={styles.packageTitle}>
+                  <View style={styles.planContent}>
+                    <Text style={styles.planName}>
                         {pkg.type === 'yearly' ? 'Premium Anual' : 'Premium Mensual'}
                       </Text>
-                      <View style={styles.priceContainer}>
-                        <Text style={styles.packagePrice}>
+                    <Text style={styles.planPrice}>
                           {formatPrice(pkg.price, pkg.currency)}
                         </Text>
-                        <Text style={styles.pricePeriod}>
-                          {pkg.type === 'yearly' ? ' por año' : ' por mes'}
+                    <Text style={styles.planPeriod}>
+                      {pkg.type === 'yearly' ? 'por año' : 'por mes'}
                         </Text>
                         {pkg.type === 'yearly' && (
-                          <Text style={styles.pricePerMonth}>
+                      <Text style={styles.planPerMonth}>
                             /mes ({formatPrice(pkg.price / 12, pkg.currency)})
                           </Text>
                         )}
-                      </View>
-                      <Text style={styles.packageDescription}>
-                        {pkg.type === 'monthly' ? 'Facturación mensual' : 'Facturación anual'}
-                      </Text>
-                      <Text style={styles.subscriptionInfo}>
-                        Suscripción auto-renovable {pkg.type === 'yearly' ? 'anual' : 'mensual'}
-                      </Text>
                       {pkg.type === 'yearly' && (
-                        <Text style={styles.savingsText}>
-                          {(() => {
-                            // Calcular ahorro: (precio mensual * 12) - precio anual
-                            const monthlyPkg = packages.find(p => p.type === 'monthly');
-                            if (monthlyPkg) {
-                              const savings = (monthlyPkg.price * 12) - pkg.price;
-                              if (savings > 0) {
-                                return `Ahorras ${formatPrice(savings, pkg.currency)} al año`;
-                              }
-                            }
-                            return 'Ahorra con el plan anual';
-                          })()}
-                        </Text>
+                      <Text style={styles.savingsText}>Ahorras con el plan anual</Text>
                       )}
                     </View>
-                    <View style={styles.packageArrow}>
-                      <Text style={styles.arrowText}>→</Text>
-                    </View>
+                  <Text style={styles.planArrow}>→</Text>
                   </TouchableOpacity>
                 ))
               ) : (
-                // Sin paquetes reales: solo informar, sin botones simulados
-                <View style={styles.noPackagesContainer}>
-                  <Text style={styles.noPackagesText}>
-                    Los planes de suscripción no están disponibles en este momento.
-                  </Text>
-                  <Text style={styles.noPackagesSubText}>
-                    Verifica la conexión o vuelve a intentarlo más tarde.
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {onStartTrial && (
-              <View style={styles.trialContainer}>
+              <>
+                {/* Fallback: Plan Mensual */}
                 <TouchableOpacity 
-                  style={[styles.trialButton, loading && styles.trialButtonDisabled]} 
-                  onPress={onStartTrial}
+                  style={styles.planButton}
+                  onPress={() => {
+                    console.log('🎯 Plan Mensual fallback seleccionado');
+                    onSelect(monthlyProduct);
+                  }}
                   disabled={loading}
                 >
-                  <Text style={styles.trialButtonText}>
-                    {loading ? 'Procesando...' : 'Probar 3 días gratis'}
+                  <View style={styles.planContent}>
+                    <Text style={styles.planName}>Premium Mensual</Text>
+                    <Text style={styles.planPrice}>
+                      {formatPrice(monthlyProduct.price, monthlyProduct.currency)}
                   </Text>
+                    <Text style={styles.planPeriod}>por mes</Text>
+                </View>
+                  <Text style={styles.planArrow}>→</Text>
                 </TouchableOpacity>
-              </View>
-            )}
-          </ScrollView>
 
-          {/* Overlay de éxito */}
-          {showSuccess && (
-            <View style={styles.successOverlay}>
-              <View style={styles.successContainer}>
-                <Text style={styles.successIcon}>✅</Text>
-                <Text style={styles.successTitle}>¡Compra exitosa!</Text>
-                <Text style={styles.successMessage}>
-                  Ya tienes acceso Premium. Disfruta de todas las funciones.
-                </Text>
-              </View>
+                {/* Fallback: Plan Anual */}
+                <TouchableOpacity 
+                  style={[styles.planButton, styles.recommendedPlan]}
+                  onPress={() => {
+                    console.log('🎯 Plan Anual fallback seleccionado');
+                    onSelect(yearlyProduct);
+                  }}
+                  disabled={loading}
+                >
+                  <View style={styles.recommendedBadge}>
+                    <Text style={styles.recommendedText}>🔥 MEJOR OPCIÓN</Text>
+                  </View>
+                  <View style={styles.planContent}>
+                    <Text style={styles.planName}>Premium Anual</Text>
+                    <Text style={styles.planPrice}>
+                      {formatPrice(yearlyProduct.price, yearlyProduct.currency)}
+                    </Text>
+                    <Text style={styles.planPeriod}>por año</Text>
+                    <Text style={styles.planPerMonth}>
+                      /mes ({formatPrice(yearlyProduct.price / 12, yearlyProduct.currency)})
+                  </Text>
+                    <Text style={styles.savingsText}>Ahorras con el plan anual</Text>
+                  </View>
+                  <Text style={styles.planArrow}>→</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+
+
+          {/* Loading */}
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Procesando compra...</Text>
             </View>
           )}
 
-          {/* Footer fijo */}
-          <View style={styles.footer}>
-            <View style={styles.legalContainer}>
-              <Text style={styles.legalText}>
-                Al suscribirte aceptas nuestros
-                {' '}<Text style={styles.link} onPress={() => {
-                  const { Linking } = require('react-native');
-                  Linking.openURL('https://gestordecreditos.netlify.app/TERMINOS_SERVICIO.md');
-                }}>Términos de Uso</Text>
-                {' '}y la{' '}
-                <Text style={styles.link} onPress={() => {
-                  const { Linking } = require('react-native');
-                  Linking.openURL('https://gestordecreditos.netlify.app/POLITICA_PRIVACIDAD.md');
-                }}>Política de Privacidad</Text>.
-              </Text>
-              <Text style={styles.legalSubText}>
-                La suscripción se renueva automáticamente salvo cancelación al menos 24 horas antes del fin del
-                período. La gestión y cancelación se realiza en Ajustes de Apple ID. El cobro se realiza a tu cuenta
-                de iTunes al confirmar la compra.
-              </Text>
+          {/* Error */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              {onRetry && (
+                <TouchableOpacity 
+                  style={styles.retryButton}
+                  onPress={onRetry}
+                >
+                  <Text style={styles.retryButtonText}>🔄 Reintentar</Text>
+                </TouchableOpacity>
+              )}
             </View>
+          )}
 
-            <TouchableOpacity onPress={onRestore} style={styles.restoreButton}>
-              <Text style={styles.restoreText}>Restaurar compras</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeText}>Tal vez después</Text>
+          {/* Footer */}
+          <View style={styles.footer}>
+              <Text style={styles.legalText}>
+              Al suscribirte aceptas nuestros Términos de Uso y la Política de Privacidad. 
+              La suscripción se renueva automáticamente salvo cancelación al menos 24 horas antes del fin del período. 
+              La gestión y cancelación se realiza a través de PayPal. El cobro se realiza a tu cuenta de PayPal al confirmar la compra.
+              </Text>
+            <TouchableOpacity onPress={onClose} style={styles.footerButton}>
+              <Text style={styles.footerButtonText}>Tal vez después</Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
     </Modal>
-
-    {/* PayPal WebView Modal */}
-    {pendingPayment && showPayPalWebView && pendingPayment.result && (
-      <PayPalWebView
-        visible={showPayPalWebView}
-        product={pendingPayment.product}
-        approvalUrl={pendingPayment.result.approvalUrl}
-        onSuccess={handlePayPalSuccess}
-        onError={handlePayPalCancel}
-        onClose={handlePayPalClose}
-      />
-    )}
-    </>
   );
 };
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   container: {
     backgroundColor: '#fff',
-    borderRadius: 20,
+    borderRadius: 12,
     width: '100%',
-    height: height * 0.9,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
+    maxHeight: height * 0.85,
     overflow: 'hidden',
   },
   header: {
-    alignItems: 'center',
     paddingTop: 20,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingBottom: 12,
     backgroundColor: '#fff',
-  },
-  scrollContent: {
-    flex: 1,
-  },
-  scrollContainer: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    flexGrow: 1,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#f39c12',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   icon: {
-    fontSize: 30,
+    fontSize: 28,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: 'bold',
     color: '#2c3e50',
-    marginBottom: 8,
     textAlign: 'center',
+    marginBottom: 6,
   },
-  message: {
-    fontSize: 16,
+  subtitle: {
+    fontSize: 14,
     color: '#7f8c8d',
     textAlign: 'center',
-    lineHeight: 22,
   },
-  limitWarning: {
-    backgroundColor: '#fff3cd',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#f39c12',
+  progressContainer: {
     width: '100%',
-  },
-  limitText: {
-    fontSize: 14,
-    color: '#856404',
-    marginBottom: 8,
-    textAlign: 'center',
+    marginTop: 8,
   },
   progressBar: {
-    height: 6,
-    backgroundColor: '#e9ecef',
-    borderRadius: 3,
+    height: 4,
+    backgroundColor: '#ecf0f1',
+    borderRadius: 2,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#f39c12',
-    borderRadius: 3,
+    backgroundColor: '#3498db',
+    borderRadius: 2,
   },
   benefitsContainer: {
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#f8f9fa',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   benefitsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#2c3e50',
-    marginBottom: 16,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#34495e',
+    marginBottom: 10,
     textAlign: 'center',
+  },
+  benefitsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   benefitItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    marginBottom: 6,
+    width: '48%',
+    marginBottom: 8,
+    paddingHorizontal: 8,
   },
   benefitIcon: {
-    fontSize: 16,
-    marginRight: 12,
+    fontSize: 18,
+    marginRight: 8,
   },
   benefitText: {
+    fontSize: 14,
+    color: '#34495e',
     flex: 1,
-    fontSize: 14,
-    color: '#495057',
-    fontWeight: '500',
   },
-  loadingContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
+  plansContainer: {
+    padding: 20,
+    backgroundColor: '#fff',
   },
-  loadingSpinner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  loadingSpinnerText: {
-    fontSize: 20,
-    color: '#3498db',
+  plansTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-  },
-  loadingText: {
-    fontSize: 16,
     color: '#2c3e50',
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  loadingSubText: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  errorContainer: {
-    backgroundColor: '#f8d7da',
-    borderColor: '#f5c6cb',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  errorIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#721c24',
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  errorSubText: {
-    fontSize: 12,
-    color: '#721c24',
-    textAlign: 'center',
-    lineHeight: 16,
     marginBottom: 12,
+    textAlign: 'center',
   },
-  retryButton: {
-    backgroundColor: '#721c24',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignSelf: 'center',
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  debugButton: {
-    backgroundColor: '#6c757d',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignSelf: 'center',
-    marginTop: 8,
-  },
-  debugButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  debugInfoButton: {
-    backgroundColor: '#17a2b8',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  debugInfoButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  packagesContainer: {
-    marginBottom: 16,
-  },
-  package: {
+  planButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
+    backgroundColor: '#ecf0f1',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 10,
     borderWidth: 2,
     borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  recommendedPackage: {
-    borderColor: '#3498db',
-    backgroundColor: '#f8f9ff',
+  recommendedPlan: {
+    borderColor: '#e74c3c',
+    backgroundColor: '#fdf2f2',
   },
   recommendedBadge: {
     position: 'absolute',
-    top: -6,
-    right: 12,
-    backgroundColor: '#3498db',
+    top: -10,
+    right: 15,
+    backgroundColor: '#e74c3c',
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    zIndex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   recommendedText: {
     color: '#fff',
@@ -701,184 +408,94 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
   },
-  packageContent: {
+  planContent: {
     flex: 1,
   },
-  packageTitle: {
+  planName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#2c3e50',
-    marginBottom: 2,
   },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 4,
-  },
-  packagePrice: {
-    fontSize: 20,
-    fontWeight: '800',
+  planPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
     color: '#3498db',
-    marginRight: 4,
+    marginTop: 2,
   },
-  pricePerMonth: {
+  planPeriod: {
+    fontSize: 13,
+    color: '#7f8c8d',
+  },
+  planPerMonth: {
     fontSize: 12,
     color: '#7f8c8d',
-    fontWeight: '500',
-  },
-  pricePeriod: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  subscriptionInfo: {
-    fontSize: 11,
-    color: '#95a5a6',
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  packageDescription: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    marginBottom: 2,
+    marginTop: 1,
   },
   savingsText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#27ae60',
     fontWeight: '600',
+    marginTop: 3,
   },
-  packageArrow: {
-    marginLeft: 8,
-  },
-  arrowText: {
+  planArrow: {
     fontSize: 18,
     color: '#3498db',
-    fontWeight: '600',
+    marginLeft: 8,
   },
-  trialContainer: {
+  loadingContainer: {
+    padding: 20,
     alignItems: 'center',
-    marginBottom: 16,
   },
-  trialButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#3498db',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+  loadingText: {
+    fontSize: 16,
+    color: '#34495e',
+    marginTop: 10,
   },
-  trialButtonText: {
-    color: '#3498db',
+  errorContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  errorText: {
     fontSize: 14,
-    fontWeight: '600',
+    color: '#e74c3c',
+    textAlign: 'center',
   },
-  trialButtonDisabled: {
-    opacity: 0.5,
-    borderColor: '#95a5a6',
+  retryButton: {
+    backgroundColor: '#e74c3c',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   footer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     alignItems: 'center',
   },
-  legalContainer: {
-    paddingBottom: 8,
-  },
   legalText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-  },
-  legalSubText: {
-    fontSize: 11,
-    color: '#8a8a8a',
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 16,
-  },
-  link: {
-    color: '#1976D2',
-    textDecorationLine: 'underline',
-  },
-  restoreButton: {
-    marginBottom: 12,
-  },
-  restoreText: {
+    fontSize: 10,
     color: '#7f8c8d',
-    fontSize: 12,
-    textDecorationLine: 'underline',
+    textAlign: 'center',
+    marginBottom: 10,
+    lineHeight: 14,
   },
-  closeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+  footerButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  closeText: {
-    color: '#95a5a6',
+  footerButtonText: {
     fontSize: 14,
-  },
-  noPackagesContainer: {
-    backgroundColor: '#fff3cd',
-    borderColor: '#ffeaa7',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  noPackagesText: {
-    fontSize: 14,
-    color: '#856404',
+    color: '#3498db',
     fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  noPackagesSubText: {
-    fontSize: 12,
-    color: '#856404',
-    textAlign: 'center',
-  },
-  successOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  successContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    margin: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  successIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#27ae60',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  successMessage: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 22,
   },
 });
+
+export { ContextualPaywall };

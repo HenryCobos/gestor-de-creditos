@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, StyleSheet, Alert, Switch, TouchableOpacity } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, Alert, Switch, TouchableOpacity, Linking, Share } from 'react-native';
 import { useApp } from '../../context/AppContext';
 import { Card, Button, Input, LoadingSpinner, LimitIndicator } from '../../components';
 import { ContextualPaywall } from '../../components/paywall/ContextualPaywall';
@@ -39,6 +39,32 @@ export function ConfiguracionScreen() {
   const loadReviewStats = async () => {
     const stats = await ReviewService.getReviewStats();
     setReviewStats(stats);
+  };
+
+  const handleAbrirLanding = async () => {
+    const url = 'https://henrycobos.github.io/gestor-creditos-landing';
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'No se puede abrir el enlace');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo abrir el sitio web');
+    }
+  };
+
+  const handleCompartirLanding = async () => {
+    try {
+      await Share.share({
+        message: '¡Descarga Gestor de Créditos! La app definitiva para prestamistas y otorgantes de crédito. Cronogramas automáticos, reportes PDF y control total de tu negocio. https://henrycobos.github.io/gestor-creditos-landing',
+        url: 'https://henrycobos.github.io/gestor-creditos-landing',
+        title: 'Gestor de Créditos - App para Prestamistas'
+      });
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo compartir');
+    }
   };
 
   const verificarPermisos = async () => {
@@ -232,6 +258,60 @@ export function ConfiguracionScreen() {
         />
       </Card>
 
+      {/* Información de Contacto */}
+      <Card style={styles.card}>
+        <View style={styles.contactHeader}>
+          <Text style={styles.contactTitle}>📧 Contacto y Soporte</Text>
+        </View>
+        
+        <View style={styles.contactItem}>
+          <View style={styles.contactInfo}>
+            <Text style={styles.contactLabel}>Correo de Soporte</Text>
+            <Text style={styles.contactValue}>Apper2025@icloud.com</Text>
+            <Text style={styles.contactDescription}>
+              Contáctanos para soporte técnico, sugerencias o reportar problemas
+            </Text>
+          </View>
+        </View>
+      </Card>
+
+      {/* Enlaces Útiles */}
+      <Card style={styles.card}>
+        <View style={styles.contactHeader}>
+          <Text style={styles.contactTitle}>🔗 Enlaces Útiles</Text>
+        </View>
+        
+        <View style={styles.linkItem}>
+          <View style={styles.linkInfo}>
+            <Text style={styles.linkLabel}>Sitio Web Oficial</Text>
+            <Text style={styles.linkDescription}>
+              Visita nuestra landing page para más información y descarga
+            </Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.linkButton}
+            onPress={handleAbrirLanding}
+          >
+            <Text style={styles.linkButtonText}>Abrir</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.linkItem}>
+          <View style={styles.linkInfo}>
+            <Text style={styles.linkLabel}>Compartir App</Text>
+            <Text style={styles.linkDescription}>
+              Comparte Gestor de Créditos con otros prestamistas
+            </Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.linkButton}
+            onPress={handleCompartirLanding}
+          >
+            <Text style={styles.linkButtonText}>Compartir</Text>
+          </TouchableOpacity>
+        </View>
+      </Card>
+
       {/* Panel de debug removido para producción - El sistema de reseñas sigue funcionando en segundo plano */}
 
       <View style={styles.bottomSpacing} />
@@ -248,21 +328,9 @@ export function ConfiguracionScreen() {
         onClose={contextualPaywall.hidePaywall}
         packages={contextualPaywall.packages}
         loading={contextualPaywall.loading}
-        error={contextualPaywall.error}
-        onSelect={(pkg) => {
-          // Convertir PayPalProduct a PricingPlan para handleSubscribe
-          const plan = {
-            id: pkg.id,
-            name: pkg.type === 'monthly' ? 'Mensual' : 'Anual',
-            price: pkg.price,
-            period: pkg.type === 'monthly' ? 'monthly' as const : 'yearly' as const,
-            revenueCatId: pkg.id,
-            features: [], // Características del plan
-          };
-          contextualPaywall.handleSubscribe(plan);
-        }}
+        error={contextualPaywall.error || undefined}
+        onSelect={contextualPaywall.handleSubscribe}
         onRestore={contextualPaywall.handleRestore}
-        onStartTrial={contextualPaywall.handleStartTrial}
         onRetry={contextualPaywall.handleRetry}
         context={contextualPaywall.context || {
           title: '',
@@ -406,5 +474,72 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff3cd',
     borderLeftWidth: 4,
     borderLeftColor: '#ffc107',
+  },
+  contactHeader: {
+    marginBottom: 16,
+  },
+  contactTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    textAlign: 'center',
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+  },
+  contactInfo: {
+    flex: 1,
+  },
+  contactLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 4,
+  },
+  contactValue: {
+    fontSize: 16,
+    color: '#3498db',
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  contactDescription: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    lineHeight: 20,
+  },
+  linkItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  linkInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  linkLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  linkDescription: {
+    fontSize: 12,
+    color: '#666',
+  },
+  linkButton: {
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  linkButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
