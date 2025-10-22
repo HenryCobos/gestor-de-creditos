@@ -83,16 +83,21 @@ export function HomeScreen() {
     console.log('🎉🎉🎉 HANDLE WEBVIEW SUCCESS LLAMADO 🎉🎉🎉');
     console.log('✅ Pago completado en WebView:', orderId);
     console.log('✅ Premium pendingPayment:', premium.pendingPayment);
+    console.log('✅ WebView Props:', webViewProps);
     
     setShowPayPalWebView(false);
     setWebViewProps(null);
     
-    // Completar el pago pendiente
-    if (premium.pendingPayment) {
+    // Completar el pago usando los datos del WebView
+    if (webViewProps && webViewProps.product) {
       console.log('🎉 Completando pago desde WebView con orderId:', orderId);
+      console.log('🎉 Producto del WebView:', webViewProps.product);
+      await premium.completePaymentFromWebView(orderId, webViewProps.product);
+    } else if (premium.pendingPayment) {
+      console.log('🎉 Completando pago desde WebView con pendingPayment:', orderId);
       await premium.completePaymentFromWebView(orderId, premium.pendingPayment.product);
     } else {
-      console.log('❌ No hay pendingPayment disponible');
+      console.log('❌ No hay datos de producto disponibles');
     }
   };
 
