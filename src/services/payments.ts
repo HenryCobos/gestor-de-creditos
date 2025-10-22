@@ -186,14 +186,29 @@ export class PayPalService {
         throw new Error('PayPal service not initialized');
       }
 
-      console.log('💰 Capturando orden aprobada:', orderId);
+      console.log('💰 INICIANDO CAPTURA DE ORDEN PAYPAL:', orderId);
+      console.log('💰 Configuración PayPal:', {
+        environment: this.config.environment,
+        hasClientId: !!this.config.clientId,
+        hasClientSecret: !!this.config.clientSecret
+      });
       
       // Capturar orden
       const capture = await this.captureOrder(orderId);
-      console.log('✅ Orden PayPal capturada:', capture.id);
+      console.log('✅ Orden PayPal capturada exitosamente:', capture.id);
+      console.log('✅ Datos de captura completos:', JSON.stringify(capture, null, 2));
       
       // Obtener ID de transacción
       const transactionId = capture.purchase_units?.[0]?.payments?.captures?.[0]?.id || capture.id;
+      console.log('✅ Transaction ID extraído:', transactionId);
+      
+      // Verificar que la captura fue exitosa
+      const captureStatus = capture.purchase_units?.[0]?.payments?.captures?.[0]?.status;
+      console.log('✅ Estado de la captura:', captureStatus);
+      
+      if (captureStatus !== 'COMPLETED') {
+        throw new Error(`Captura no completada. Estado: ${captureStatus}`);
+      }
       
       return {
         success: true,
@@ -203,6 +218,7 @@ export class PayPalService {
 
     } catch (error: any) {
       console.error('❌ Error capturando orden PayPal:', error);
+      console.error('❌ Detalles del error:', error.response?.data || error.message);
       return {
         success: false,
         error: error.message || 'Capture failed'
@@ -288,7 +304,10 @@ export class PayPalService {
 
     const accessToken = await this.getAccessToken();
 
-    console.log('💰 Capturando orden PayPal:', orderId);
+    console.log('💰 EJECUTANDO CAPTURA REAL DE ORDEN PAYPAL:');
+    console.log('💰 Order ID:', orderId);
+    console.log('💰 Base URL:', baseUrl);
+    console.log('💰 Access Token:', accessToken ? 'Presente' : 'Ausente');
 
     const response = await axios.post(`${baseUrl}/v2/checkout/orders/${orderId}/capture`, {}, {
       headers: {
@@ -297,7 +316,11 @@ export class PayPalService {
       }
     });
 
-    console.log('✅ Orden PayPal capturada:', response.data.id);
+    console.log('✅ RESPUESTA DE CAPTURA PAYPAL:');
+    console.log('✅ Status Code:', response.status);
+    console.log('✅ Order ID:', response.data.id);
+    console.log('✅ Respuesta completa:', JSON.stringify(response.data, null, 2));
+    
     return response.data;
   }
 

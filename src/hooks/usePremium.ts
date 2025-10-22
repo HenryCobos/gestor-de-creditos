@@ -240,26 +240,33 @@ export function usePremium() {
     }
   }, []); // Sin dependencias para evitar bucle infinito
 
-  const completePaymentFromWebView = useCallback(async (transactionId: string, product: PayPalProduct) => {
-    console.log('🎉 Completando pago desde WebView:', transactionId);
+  const completePaymentFromWebView = useCallback(async (orderId: string, product: PayPalProduct) => {
+    console.log('🎉 COMPLETANDO PAGO DESDE WEBVIEW:');
+    console.log('🎉 Order ID recibido:', orderId);
+    console.log('🎉 Producto:', product);
     
     try {
       // Primero capturar la orden aprobada
-      const captureResult = await PayPalService.captureApprovedOrder(transactionId);
+      console.log('🎉 Llamando a captureApprovedOrder...');
+      const captureResult = await PayPalService.captureApprovedOrder(orderId);
+      console.log('🎉 Resultado de captura:', captureResult);
       
       if (captureResult.success) {
         console.log('✅ Orden capturada exitosamente:', captureResult.transactionId);
         
         // Guardar estado premium en AsyncStorage ANTES de actualizar el estado
         if (captureResult.transactionId) {
-          await PayPalService.savePremiumState({
+          const premiumData = {
             isPremium: true,
             productId: product.id,
             transactionId: captureResult.transactionId,
             purchaseDate: new Date().toISOString(),
             expiryDate: new Date(Date.now() + (product.type === 'monthly' ? 30 : 365) * 24 * 60 * 60 * 1000).toISOString(),
             type: product.type
-          });
+          };
+          
+          console.log('💾 Guardando estado premium:', premiumData);
+          await PayPalService.savePremiumState(premiumData);
           console.log('💾 Estado premium guardado en AsyncStorage');
         } else {
           console.warn('⚠️ No se pudo guardar estado premium: transactionId no disponible');
@@ -279,7 +286,7 @@ export function usePremium() {
         // Trackear para sistema de reseñas
         await ReviewService.trackPremiumSubscribed();
         
-        console.log('✅ Pago completado exitosamente desde WebView');
+        console.log('✅ PAGO COMPLETADO EXITOSAMENTE - USUARIO AHORA ES PREMIUM');
       } else {
         throw new Error(captureResult.error || 'Error capturando la orden');
       }
