@@ -79,14 +79,15 @@ export function HomeScreen() {
   };
 
   // Funciones para manejar PayPal WebView
-  const handleWebViewSuccess = async (transactionId: string) => {
-    console.log('✅ Pago completado en WebView:', transactionId);
+  const handleWebViewSuccess = async (orderId: string) => {
+    console.log('✅ Pago completado en WebView:', orderId);
     setShowPayPalWebView(false);
     setWebViewProps(null);
     
     // Completar el pago pendiente
     if (premium.pendingPayment) {
-      await premium.completePaymentFromWebView(transactionId, premium.pendingPayment.product);
+      console.log('🎉 Completando pago desde WebView con orderId:', orderId);
+      await premium.completePaymentFromWebView(orderId, premium.pendingPayment.product);
     }
   };
 
