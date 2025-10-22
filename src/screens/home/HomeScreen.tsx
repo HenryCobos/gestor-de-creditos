@@ -80,7 +80,10 @@ export function HomeScreen() {
 
   // Funciones para manejar PayPal WebView
   const handleWebViewSuccess = async (orderId: string) => {
+    console.log('🎉🎉🎉 HANDLE WEBVIEW SUCCESS LLAMADO 🎉🎉🎉');
     console.log('✅ Pago completado en WebView:', orderId);
+    console.log('✅ Premium pendingPayment:', premium.pendingPayment);
+    
     setShowPayPalWebView(false);
     setWebViewProps(null);
     
@@ -88,6 +91,8 @@ export function HomeScreen() {
     if (premium.pendingPayment) {
       console.log('🎉 Completando pago desde WebView con orderId:', orderId);
       await premium.completePaymentFromWebView(orderId, premium.pendingPayment.product);
+    } else {
+      console.log('❌ No hay pendingPayment disponible');
     }
   };
 
