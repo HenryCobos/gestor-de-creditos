@@ -255,8 +255,8 @@ export class PayPalService {
         brand_name: 'Gestor de Créditos',
         landing_page: 'NO_PREFERENCE',
         user_action: 'PAY_NOW',
-        return_url: 'https://gestordecreditos.netlify.app/success?payment=success',
-        cancel_url: 'https://gestordecreditos.netlify.app/cancel?payment=cancel'
+        return_url: 'https://henrycobos.github.io/gestor-creditos-landing/success.html?payment=success',
+        cancel_url: 'https://henrycobos.github.io/gestor-creditos-landing/cancel.html?payment=cancel'
       }
     };
 
