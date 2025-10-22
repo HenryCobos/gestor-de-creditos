@@ -16,7 +16,7 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: 'monthly',
     name: 'Mensual',
-    price: 9.99,
+    price: 1.00, // PRECIO DE PRUEBA - Cambiar a 9.99 para producción
     period: 'monthly',
     revenueCatId: 'gdc_pro_monthly',
     features: [
