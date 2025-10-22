@@ -35,8 +35,8 @@
       "expo-font"
     ],
     "extra": {
-      "PAYPAL_CLIENT_ID": "AZ8-bEe18O6iV94mOfhtJfN-9e3SngJk3XuRMHcIdwzwXMcDBkXfX9VEoS4DAJ3MD3Ccd2StuVSiB_Fw",
-      "PAYPAL_CLIENT_SECRET": "EECN530swi5V_QOlf6DwKRrFLo4tr_TYbDVVE2FZ97OWuvUxB7JaSE6kcRcGq2-hWIXx0F-551q2jsop",
+      "PAYPAL_CLIENT_ID": "Ab17ViCU8vFJsWKNcu1X2B-BGW-MKPicF3tptPeQOB4mspLD1UCYmU4JVlIhfOGYxUmw-aGmTXHV4b-0",
+      "PAYPAL_CLIENT_SECRET": "EGmC8mfJddES1USnaz42NFXWs7Q5C7g_bWO83Zzoge-2gQTiqRan-UJD29oUFk1gf4MuuhQ3rRnJCPr7",
       "PAYPAL_ENVIRONMENT": "production",
       "eas": {
         "projectId": "2b135ac1-89fa-4289-afdb-02f69e63e621"

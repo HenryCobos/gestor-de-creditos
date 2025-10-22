@@ -121,14 +121,14 @@ export class PayPalService {
   static getProducts(): PayPalProduct[] {
     return [
       {
-        id: 'P-5XJ99625GT120133NNDZHG3Y', // ID real de PayPal - Plan Mensual
+        id: 'P-5XJ99625GT120133NNDZHG3Y', // ID de PayPal PRODUCCIÓN - Plan Mensual
         name: 'Plan Mensual Premium - Gestor de Créditos',
-        price: 1.00,
+        price: 9.99,
         currency: 'USD',
         type: 'monthly'
       },
       {
-        id: 'P-6GH417601N8335719NDZHHYI', // ID real de PayPal - Plan Anual
+        id: 'P-6GH417601N8335719NDZHHYI', // ID de PayPal PRODUCCIÓN - Plan Anual
         name: 'Plan Anual Premium - Gestor de Créditos',
         price: 59.99,
         currency: 'USD',
