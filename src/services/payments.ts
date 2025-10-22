@@ -123,7 +123,7 @@ export class PayPalService {
       {
         id: 'P-5XJ99625GT120133NNDZHG3Y', // ID de PayPal PRODUCCIÓN - Plan Mensual
         name: 'Plan Mensual Premium - Gestor de Créditos',
-        price: 1.00, // PRECIO DE PRUEBA - Cambiar a 9.99 para producción
+        price: 9.99, // PRECIO DE PRODUCCIÓN
         currency: 'USD',
         type: 'monthly'
       },
