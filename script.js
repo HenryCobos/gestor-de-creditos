@@ -13,6 +13,20 @@ document.getElementById('whatsappForm')?.addEventListener('submit', function(e) 
         return;
     }
     
+    // Rastrear el interés en WhatsApp (Lead)
+    if (typeof trackWhatsAppInterest === 'function') {
+        trackWhatsAppInterest();
+    }
+    
+    // También enviar evento de conversión de Lead
+    if (typeof gtag === 'function') {
+        gtag('event', 'generate_lead', {
+            'event_category': 'engagement',
+            'event_label': 'WhatsApp Group Interest',
+            'value': 1
+        });
+    }
+    
     // Limpiar el número (quitar espacios y caracteres especiales excepto +)
     const cleanPhone = phone.replace(/[^\d+]/g, '');
     
