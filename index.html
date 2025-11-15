@@ -3,116 +3,435 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Créditos - App Oficial</title>
-    <meta name="description" content="Aplicación móvil para gestionar préstamos, clientes y cuotas. Disponible en App Store.">
-    <meta name="keywords" content="finanzas, créditos, préstamos, gestión, clientes, cuotas, microfinanzas">
-    <link rel="canonical" href="https://gestordecreditos.netlify.app/">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .document-card {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            transition: transform 0.2s;
-        }
-        .document-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .document-card h2 {
-            color: #495057;
-            margin-top: 0;
-        }
-        .document-card p {
-            color: #6c757d;
-            margin-bottom: 15px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background 0.2s;
-        }
-        .btn:hover {
-            background: #0056b3;
-        }
-        .contact-info {
-            background: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            padding: 20px;
-            margin: 30px 0;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            color: #6c757d;
-            font-size: 14px;
-        }
-    </style>
+    <title>Gestor de Créditos - App Profesional para Préstamos</title>
+    <meta name="description" content="La app #1 para gestionar préstamos, clientes y pagos. Descarga ahora y obtén 60% de descuento en tu primera suscripción.">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="stylesheet" href="styles.css?v=2.0">
+    
+    <!-- Google Analytics (Reemplaza con tu ID) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
 </head>
 <body>
-    <div class="container">
-        <h1>📱 Gestor de Créditos</h1>
-        <h2 style="text-align: center; color: #495057;">Aplicación Oficial para iOS</h2>
-        
-        <div style="text-align: center; margin: 30px 0; padding: 20px; background: #e3f2fd; border-radius: 10px;">
-            <p style="font-size: 1.1em; margin-bottom: 15px;">✅ <strong>Sitio Oficial Verificado</strong></p>
-            <p style="color: #1976d2; margin: 0;">Este es el sitio web oficial de la aplicación Gestor de Créditos</p>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <div class="badge">
+                        <img src="icon.png" alt="Gestor de Créditos" class="badge-icon">
+                        🚀 App #1 en Gestión de Préstamos
+                    </div>
+                    <h1>Gestiona tus Préstamos de Forma Profesional</h1>
+                    <p class="hero-subtitle">
+                        Controla clientes, préstamos y pagos desde tu iPhone. 
+                        Olvídate de hojas de cálculo complicadas.
+                    </p>
+                    
+            <!-- Promo Banner -->
+            <div class="promo-banner">
+                <div class="promo-icon">🎁</div>
+                <div class="promo-text">
+                    <strong>OFERTA ESPECIAL</strong>
+                    <p>Plan Anual con 50% de descuento - Ahorra $60 al año</p>
+                </div>
+            </div>
+                    
+                    <div class="cta-buttons">
+                        <a href="https://apps.apple.com/app/id6749607856" class="btn btn-primary" onclick="gtag('event', 'click', {'event_category': 'CTA', 'event_label': 'Hero Download'})">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5M13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+                            </svg>
+                            Descargar en App Store
+                        </a>
+                        <a href="#video" class="btn btn-secondary">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                            Ver Demo
+                        </a>
+                    </div>
+                    
+                    <div class="trust-indicators">
+                        <div class="indicator">
+                            <span class="stars">⭐⭐⭐⭐⭐</span>
+                            <span>4.8/5 en App Store</span>
+                        </div>
+                        <div class="indicator">
+                            <span>💰</span>
+                            <span>+5,000 descargas</span>
+                        </div>
+                        <div class="indicator">
+                            <span>🔒</span>
+                            <span>100% Seguro</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="hero-image">
+                    <!-- Placeholder si no tienes la imagen -->
+                    <div class="mockup-placeholder">
+                        <div class="phone-frame">
+                            <div class="phone-screen">
+                                <div class="app-preview">
+                                    <div class="preview-header">
+                                        <img src="icon.png" alt="App Icon" class="app-icon-small">
+                                        <h3>Gestor de Créditos</h3>
+                                    </div>
+                                    <div class="preview-stats">
+                                        <div class="stat">
+                                            <div class="stat-number">47</div>
+                                            <div class="stat-label">Clientes</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-number">$23,450</div>
+                                            <div class="stat-label">Total Activo</div>
+                                        </div>
+                                    </div>
+                                    <div class="preview-list">
+                                        <div class="list-item">
+                                            <div class="item-icon">👤</div>
+                                            <div class="item-info">
+                                                <div class="item-name">Juan Pérez</div>
+                                                <div class="item-amount">$1,500</div>
+                                            </div>
+                                        </div>
+                                        <div class="list-item">
+                                            <div class="item-icon">👤</div>
+                                            <div class="item-info">
+                                                <div class="item-name">María García</div>
+                                                <div class="item-amount">$2,300</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <div class="document-card">
-            <h2>🔒 Política de Privacidad</h2>
-            <p>Documento oficial que describe cómo recopilamos, usamos y protegemos su información personal. Cumple con GDPR, CCPA y COPPA.</p>
-            <a href="./POLITICA_PRIVACIDAD.md" class="btn">Ver Política de Privacidad</a>
+    </section>
+
+    <!-- Video Section -->
+    <section id="video" class="video-section">
+        <div class="container">
+            <h2 class="section-title">Mira cómo funciona</h2>
+            <p class="section-subtitle">En menos de 2 minutos, descubre cómo Gestor de Créditos puede transformar tu negocio</p>
+            
+            <div class="video-container">
+                <iframe width="100%" height="100%" 
+                        src="https://www.youtube.com/embed/fzCvAGgqHe0" 
+                        title="Gestor de Créditos - Demo"
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                </iframe>
+            </div>
         </div>
-        
-        <div class="document-card">
-            <h2>📋 Términos de Servicio</h2>
-            <p>Documento oficial que establece las condiciones de uso de la aplicación, derechos y responsabilidades.</p>
-            <a href="./TERMINOS_SERVICIO.md" class="btn">Ver Términos de Servicio</a>
+    </section>
+
+    <!-- Problem/Solution -->
+    <section class="problem-solution">
+        <div class="container">
+            <div class="problem">
+                <h3>❌ ¿Te suena familiar?</h3>
+                <ul>
+                    <li>Hojas de cálculo desordenadas y difíciles de mantener</li>
+                    <li>Olvidas fechas de pago y pierdes dinero</li>
+                    <li>No sabes quién te debe exactamente cuánto</li>
+                    <li>Cálculos manuales que te quitan tiempo</li>
+                </ul>
+            </div>
+            <div class="solution">
+                <h3>✅ Con Gestor de Créditos</h3>
+                <ul>
+                    <li>Todo organizado automáticamente en tu iPhone</li>
+                    <li>Recordatorios inteligentes de pagos pendientes</li>
+                    <li>Vista clara de quién debe qué en tiempo real</li>
+                    <li>Cálculos automáticos de intereses y cuotas</li>
+                </ul>
+            </div>
         </div>
-        
-        <div class="document-card">
-            <h2>📞 Centro de Soporte</h2>
-            <p>Encuentra respuestas a preguntas frecuentes, información de contacto y ayuda técnica para usar la aplicación.</p>
-            <a href="./support.html" class="btn">Ver Centro de Soporte</a>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Todo lo que necesitas en una sola app</h2>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <h3>Gestión de Clientes</h3>
+                    <p>Mantén toda la información de tus clientes organizada y accesible</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3>Control de Préstamos</h3>
+                    <p>Crea préstamos con diferentes tasas de interés y plazos</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Reportes Profesionales</h3>
+                    <p>Genera reportes detallados y exporta en PDF</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔔</div>
+                    <h3>Recordatorios</h3>
+                    <p>Notificaciones automáticas de pagos próximos o vencidos</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📅</div>
+                    <h3>Cronogramas Automáticos</h3>
+                    <p>Calcula cuotas, intereses y vencimientos automáticamente</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>100% Seguro</h3>
+                    <p>Tus datos protegidos con la seguridad de Apple</p>
+                </div>
+            </div>
         </div>
-        
-        <div class="contact-info">
-            <h3>📞 Información de Contacto</h3>
-            <p><strong>Email:</strong> Apper2025@icloud.com</p>
-            <p><strong>País:</strong> Perú</p>
-            <p><strong>Aplicación:</strong> Gestor de Créditos</p>
+    </section>
+
+    <!-- Pricing -->
+    <section class="pricing">
+        <div class="container">
+        <div class="promo-alert">
+            <span class="promo-badge">MEJOR PRECIO</span>
+            <h2>Plan Anual con 50% de Descuento</h2>
+            <p>Paga solo $59.99 al año en lugar de $119.88 - Ahorra más de $60</p>
         </div>
-        
-        <div class="footer">
-            <p><strong>Última actualización:</strong> 8 de enero de 2025</p>
-            <p>Estos documentos son oficiales y están actualizados.</p>
+            
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <div class="plan-header">
+                        <h3>Plan Mensual</h3>
+                        <div class="price-container">
+                            <span class="new-price">$9.99</span>
+                            <span class="period">/mes</span>
+                        </div>
+                        <div class="plan-subtitle">Facturación mensual</div>
+                    </div>
+                    <ul class="plan-features">
+                        <li>✅ Clientes ilimitados</li>
+                        <li>✅ Préstamos ilimitados</li>
+                        <li>✅ Reportes completos</li>
+                        <li>✅ Exportación PDF</li>
+                        <li>✅ Notificaciones</li>
+                        <li>✅ Soporte prioritario</li>
+                    </ul>
+                    <a href="https://apps.apple.com/app/id6749607856" class="btn btn-outline">Comenzar Ahora</a>
+                </div>
+                
+                <div class="pricing-card featured">
+                    <div class="popular-badge">AHORRA 50%</div>
+                    <div class="plan-header">
+                        <h3>Plan Anual</h3>
+                        <div class="price-container">
+                            <span class="old-price">$119.88</span>
+                            <span class="new-price">$59.99</span>
+                            <span class="period">/año</span>
+                        </div>
+                        <div class="savings">Ahorra $59.89 al año (50% OFF)</div>
+                    </div>
+                    <ul class="plan-features">
+                        <li>✅ Todo del plan mensual</li>
+                        <li>✅ 2 meses GRATIS</li>
+                        <li>✅ Actualizaciones prioritarias</li>
+                        <li>✅ Funciones exclusivas</li>
+                        <li>✅ Análisis avanzados</li>
+                        <li>✅ Soporte VIP</li>
+                    </ul>
+                    <a href="https://apps.apple.com/app/id6749607856" class="btn btn-primary">Mejor Oferta</a>
+                </div>
+            </div>
+            
+            <p class="pricing-note">
+                * Precios mostrados en USD. Pueden variar según tu país. El plan anual te ahorra 2 meses vs pagar mensualmente.
+            </p>
         </div>
-    </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+        <div class="container">
+            <h2 class="section-title">Lo que dicen nuestros usuarios</h2>
+            
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">
+                        "Antes usaba Excel y era un caos. Con esta app tengo todo organizado y nunca más olvidé un pago. Vale cada centavo."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">JM</div>
+                        <div>
+                            <div class="author-name">Jorge Martínez</div>
+                            <div class="author-title">Prestamista - Lima, Perú</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">
+                        "Los reportes en PDF son perfectos para mostrar a mis clientes. La app se ve muy profesional y es súper fácil de usar."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MC</div>
+                        <div>
+                            <div class="author-name">María Castillo</div>
+                            <div class="author-title">Microfinanzas - México</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">
+                        "Llevo 3 meses usándola y mi negocio de préstamos se multiplicó. Ya no pierdo tiempo en cálculos manuales."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">RF</div>
+                        <div>
+                            <div class="author-name">Roberto Fernández</div>
+                            <div class="author-title">Emprendedor - Colombia</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">
+                        "Como mujer emprendedora, esta app me da la confianza de llevar mi negocio de préstamos de forma profesional."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">AP</div>
+                        <div>
+                            <div class="author-name">Ana Pérez</div>
+                            <div class="author-title">Microcréditos - Chile</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WhatsApp Group -->
+    <section class="whatsapp-section">
+        <div class="container">
+            <div class="whatsapp-card">
+                <div class="whatsapp-icon">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="#25D366">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                    </svg>
+                </div>
+                <h2>Únete al Grupo VIP de WhatsApp</h2>
+                <p>Recibe tips exclusivos, actualizaciones tempranas y ayúdanos a mejorar la app con tus ideas</p>
+                
+                <form id="whatsappForm" class="whatsapp-form">
+                    <input 
+                        type="tel" 
+                        id="whatsapp" 
+                        placeholder="Tu número de WhatsApp (ej: +51 999999999)" 
+                        required
+                        class="whatsapp-input"
+                    >
+                    <button type="submit" class="btn btn-whatsapp">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                        </svg>
+                        Unirme al Grupo
+                    </button>
+                </form>
+                
+                <div id="formMessage" class="form-message"></div>
+                
+                <div class="group-benefits">
+                    <div class="benefit">
+                        <span>💡</span>
+                        <span>Tips exclusivos</span>
+                    </div>
+                    <div class="benefit">
+                        <span>🎁</span>
+                        <span>Ofertas especiales</span>
+                    </div>
+                    <div class="benefit">
+                        <span>🚀</span>
+                        <span>Acceso anticipado</span>
+                    </div>
+                    <div class="benefit">
+                        <span>🤝</span>
+                        <span>Comunidad activa</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="final-cta">
+        <div class="container">
+            <h2>Comienza a Gestionar tus Préstamos Profesionalmente</h2>
+            <p>Descarga ahora y elige el plan que mejor se ajuste a ti</p>
+            <a href="https://apps.apple.com/app/id6749607856" class="btn btn-primary btn-large">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5M13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+                </svg>
+                Descargar Gratis en App Store
+            </a>
+            <p class="cta-note">Disponible solo para iPhone y iPad • iOS 15.0 o superior</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Gestor de Créditos</h4>
+                    <p>La solución profesional para gestionar préstamos y clientes desde tu iPhone.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="https://gestordecreditos.netlify.app/POLITICA_PRIVACIDAD.md">Política de Privacidad</a></li>
+                        <li><a href="https://gestordecreditos.netlify.app/TERMINOS_SERVICIO.md">Términos de Servicio</a></li>
+                        <li><a href="https://gestordecreditos.netlify.app/eula.html">EULA</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Soporte</h4>
+                    <ul>
+                        <li><a href="mailto:soporte@gestordecreditos.app">Contacto</a></li>
+                        <li><a href="#whatsapp-section">Grupo de WhatsApp</a></li>
+                        <li><a href="https://apps.apple.com/app/id6749607856">App Store</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Gestor de Créditos. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
 </body>
-</html> 
+</html>
+
