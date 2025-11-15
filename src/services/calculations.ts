@@ -618,11 +618,16 @@ export class CalculationService {
     if (pagosRealizados >= cuota.montoTotal) {
       estadoCalculado = 'pagada';
     } else if (pagosRealizados > 0) {
+      // Si hay pagos parciales, siempre mantener como 'parcial' 
+      // para permitir completar el pago, sin importar si está vencida
       estadoCalculado = 'parcial';
     } else {
+      // Solo marcar como vencida si no hay pagos
       const hoy = new Date().toISOString().split('T')[0];
       if (cuota.fechaVencimiento < hoy) {
         estadoCalculado = 'vencida';
+      } else {
+        estadoCalculado = 'pendiente';
       }
     }
 

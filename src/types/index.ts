@@ -222,6 +222,7 @@ export type AppAction =
   | { type: 'SET_CUOTAS'; payload: Cuota[] }
   | { type: 'UPDATE_CUOTA'; payload: Cuota }
   | { type: 'MARK_CUOTA_PAID'; payload: { cuotaId: string; pago: Pago } }
+  | { type: 'UPDATE_CUOTA_WITH_PAYMENT'; payload: { cuotaId: string; cuotaActualizada: Cuota; pago: Pago } }
   
   // Pagos
   | { type: 'SET_PAGOS'; payload: Pago[] }

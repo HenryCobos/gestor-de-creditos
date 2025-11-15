@@ -1,4 +1,4 @@
-package com.gestordecreditos.app
+package com.gestordecreditos.android
 
 import android.app.Application
 import android.content.res.Configuration

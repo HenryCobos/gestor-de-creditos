@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "Gestor de Créditos",
-    "slug": "gestor-de-creditos",
-    "version": "1.3.1",
+    "slug": "gestor-de-creditos-android",
+    "version": "1.3.4",
     "orientation": "portrait",
     "platforms": [
-      "ios"
+      "android"
     ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,18 +14,6 @@
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#2196F3"
-    },
-    "ios": {
-      "bundleIdentifier": "com.gestordecreditos.app",
-      "buildNumber": "153",
-      "supportsTablet": false,
-      "infoPlist": {
-        "NSCameraUsageDescription": "Esta app no requiere acceso a la cámara",
-        "NSPhotoLibraryUsageDescription": "Esta app no requiere acceso a la galería",
-        "NSLocationUsageDescription": "Esta app no requiere acceso a la ubicación",
-        "NSMicrophoneUsageDescription": "Esta app no requiere acceso al micrófono",
-        "ITSAppUsesNonExemptEncryption": false
-      }
     },
     "plugins": [
       [
@@ -37,23 +25,31 @@
       [
         "expo-build-properties",
         {
-          "ios": {
-            "useFrameworks": "static",
-            "deploymentTarget": "15.1"
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 34,
+            "buildToolsVersion": "35.0.0"
           }
         }
       ],
       "expo-font"
     ],
     "extra": {
+      "PAYPAL_CLIENT_ID": "Ab17ViCU8vFJsWKNcu1X2B-BGW-MKPicF3tptPeQOB4mspLD1UCYmU4JVlIhfOGYxUmw-aGmTXHV4b-0",
+      "PAYPAL_CLIENT_SECRET": "EGmC8mfJddES1USnaz42NFXWs7Q5C7g_bWO83Zzoge-2gQTiqRan-UJD29oUFk1gf4MuuhQ3rRnJCPr7",
+      "PAYPAL_ENVIRONMENT": "production",
       "eas": {
-        "projectId": "fcc79bd1-8773-45fb-a4f3-844d1bdd2713"
-      },
-      "REVENUECAT_API_KEY": "appl_HBAAMBPWVHCSzpewyTSsBEPiEjf"
+        "projectId": "2b135ac1-89fa-4289-afdb-02f69e63e621"
+      }
     },
     "owner": "henryapper",
     "android": {
-      "package": "com.gestordecreditos.app"
+      "package": "com.gestordecreditos.android",
+      "versionCode": 159,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ]
     }
   }
 }

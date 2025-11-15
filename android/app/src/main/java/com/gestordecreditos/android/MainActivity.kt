@@ -1,4 +1,4 @@
-package com.gestordecreditos.app
+package com.gestordecreditos.android
 
 import android.os.Build
 import android.os.Bundle

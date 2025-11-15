@@ -92,10 +92,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ children }) => {
         onClose={contextualPaywall.hidePaywall}
         packages={contextualPaywall.packages}
         loading={contextualPaywall.loading}
-        error={contextualPaywall.error}
+        error={contextualPaywall.error || undefined}
         onSelect={contextualPaywall.handleSubscribe}
         onRestore={contextualPaywall.handleRestore}
-        onStartTrial={contextualPaywall.handleStartTrial}
         onRetry={contextualPaywall.handleRetry}
         context={contextualPaywall.context || {
           title: '',
@@ -103,6 +102,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ children }) => {
           icon: '',
           featureName: '',
         }}
+        pendingPayment={contextualPaywall.pendingPayment}
+        onCompletePayment={contextualPaywall.onCompletePayment}
+        onCancelPayment={contextualPaywall.onCancelPayment}
       />
     </View>
   );

@@ -5,7 +5,7 @@ import { AppProvider } from './src/context/AppContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { OnboardingFlow } from './src/components/onboarding/OnboardingFlow';
 import { NotificationService } from './src/services/notifications';
-import { PurchasesService } from './src/services/purchases';
+import { PayPalService } from './src/services/payments';
 import { AutoBackupService } from './src/services/autoBackup';
 import { AnalyticsService } from './src/services/analytics';
 import { userService } from './src/services/userService';
@@ -26,14 +26,9 @@ function AppContent() {
           console.log('ℹ️ Omitiendo notificaciones en Expo Go');
         }
 
-        // Inicializar RevenueCat
-        const apiKey = (Constants?.expoConfig as any)?.extra?.REVENUECAT_API_KEY || (Constants?.manifest as any)?.extra?.REVENUECAT_API_KEY;
-        if (apiKey) {
-          await PurchasesService.initialize(apiKey);
-          console.log('✅ RevenueCat inicializado');
-        } else {
-          console.warn('⚠️ Falta REVENUECAT_API_KEY en app.json > expo.extra');
-        }
+        // Inicializar PayPal
+        await PayPalService.initialize();
+        console.log('✅ PayPal inicializado');
 
         // Inicializar analytics
         await AnalyticsService.initialize();

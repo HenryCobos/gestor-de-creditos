@@ -20,43 +20,24 @@ export function useContextualPaywall() {
 
   const showPaywall = useCallback(async (feature: FeatureKey, customContext?: Partial<PaywallContext>) => {
     // Verificar estado Premium actualizado antes de mostrar paywall
-    console.log('🔍 Verificando estado Premium ULTRA-DETALLADO antes de mostrar paywall...');
-    console.log('🔍 Feature solicitado:', feature);
-    
     await premium.updatePremiumState();
 
     // Verificar nuevamente después de la actualización
     const currentPremiumStatus = premium.isPremium;
-    console.log('📊 Estado Premium actual:', currentPremiumStatus);
 
     // Verificar también el customerInfo directamente
     const customerInfo = premium.customerInfo;
-    const hasActiveSubscription = customerInfo?.entitlements?.active?.["pro"] != null;
-    console.log('🔍 Verificación adicional - hasActiveSubscription:', hasActiveSubscription);
-    console.log('🔍 CustomerInfo completo:', {
-      customerInfo: !!customerInfo,
-      entitlements: customerInfo?.entitlements,
-      activeEntitlements: customerInfo?.entitlements?.active,
-      activeSubscriptions: customerInfo?.activeSubscriptions
-    });
+    const hasActiveSubscription = customerInfo?.transactionId != null;
 
     // Verificación adicional: si no detecta suscripción, forzar una verificación más
     if (!currentPremiumStatus && !hasActiveSubscription) {
-      console.log('🔄 No se detectó suscripción, forzando verificación adicional...');
       await premium.updatePremiumState();
       
       // Verificar una vez más
       const finalCustomerInfo = premium.customerInfo;
-      const finalHasActiveSubscription = finalCustomerInfo?.entitlements?.active?.["pro"] != null;
-      
-      console.log('🔍 Verificación final:', {
-        finalHasActiveSubscription,
-        finalCustomerInfo: !!finalCustomerInfo,
-        finalEntitlements: finalCustomerInfo?.entitlements?.active
-      });
+      const finalHasActiveSubscription = finalCustomerInfo?.transactionId != null;
       
       if (finalHasActiveSubscription) {
-        console.log('✅ Suscripción detectada en verificación adicional');
         return false;
       }
     }
@@ -67,11 +48,8 @@ export function useContextualPaywall() {
       isPremium: currentPremiumStatus || hasActiveSubscription,
     });
 
-    console.log('🔍 Gate result:', gate);
-
     // No mostrar paywall si es premium (verificación doble)
     if (currentPremiumStatus || hasActiveSubscription) {
-      console.log('✅ Usuario ya es Premium - no mostrando paywall');
       return false;
     }
 
@@ -162,53 +140,75 @@ export function useContextualPaywall() {
   }, []);
 
   const handleSubscribe = useCallback(async (selected: any) => {
-    // Acepta tanto paquetes de RevenueCat como planes locales (PricingPlan)
-    let packageToPurchase = selected;
-
-    // Si viene de SimplePaywall (PricingPlan), mapear al paquete de RevenueCat
-    if (selected && typeof selected === 'object' && 'revenueCatId' in selected && !('product' in selected)) {
-      const revenueCatId = (selected as any).revenueCatId;
-      const found = (premium.packages || []).find((p: any) => p?.identifier === revenueCatId);
-      if (found) {
-        packageToPurchase = found;
-      } else {
-        console.warn('Paquete de RevenueCat no encontrado para', revenueCatId);
-      }
-    }
-
-    console.log('🛒 Iniciando compra desde paywall...');
     let shouldClose = false;
     
     try {
-      const result = await premium.subscribe(packageToPurchase);
-      
-      if (result.success) {
-        console.log('✅ Compra exitosa - marcando para cerrar paywall');
-        shouldClose = true;
-      } else {
-        console.log('❌ Error en compra:', result.error);
+      // Si viene de ContextualPaywall (PayPalProduct), usar directamente
+      if (selected && typeof selected === 'object' && 'type' in selected && 'price' in selected) {
+        const result = await premium.subscribe(selected);
         
-        // Si el error es "ya suscrito", también cerrar
-        const errorMsg = (result.error?.message || '').toLowerCase();
-        if (errorMsg.includes('already') || errorMsg.includes('suscrito') || errorMsg.includes('subscribed') || errorMsg.includes('purchased') || errorMsg.includes('cancelad')) {
-          console.log('✅ Usuario ya suscrito detectado - marcando para cerrar paywall');
-          shouldClose = true;
+        if (result.success) {
+          // Solo cerrar si NO requiere WebView
+          if (!result.requiresWebView) {
+            shouldClose = true;
+          } else {
+            console.log('🌐 Pago requiere WebView, manteniendo paywall abierto');
+            shouldClose = false;
+          }
+        } else {
+          // Si el error es "ya suscrito", también cerrar
+          const errorMsg = (result.error?.message || '').toLowerCase();
+          if (errorMsg.includes('already') || errorMsg.includes('suscrito') || errorMsg.includes('subscribed') || errorMsg.includes('purchased') || errorMsg.includes('cancelad')) {
+            shouldClose = true;
+          }
         }
+        
+        return result;
       }
       
-      return result;
+      // Si viene de SimplePaywall (PricingPlan), convertir a PayPalProduct
+      if (selected && typeof selected === 'object' && 'revenueCatId' in selected && !('product' in selected)) {
+        const paypalProduct = {
+          id: selected.id,
+          name: selected.name,
+          price: selected.price,
+          currency: 'USD',
+          type: selected.period as 'monthly' | 'yearly'
+        };
+        
+        const result = await premium.subscribe(paypalProduct);
+        
+        if (result.success) {
+          // Solo cerrar si NO requiere WebView
+          if (!result.requiresWebView) {
+            shouldClose = true;
+          } else {
+            console.log('🌐 Pago requiere WebView, manteniendo paywall abierto');
+            shouldClose = false;
+          }
+        } else {
+          // Si el error es "ya suscrito", también cerrar
+          const errorMsg = (result.error?.message || '').toLowerCase();
+          if (errorMsg.includes('already') || errorMsg.includes('suscrito') || errorMsg.includes('subscribed') || errorMsg.includes('purchased') || errorMsg.includes('cancelad')) {
+            shouldClose = true;
+          }
+        }
+        
+        return result;
+      }
+      
+      // Si no se puede procesar, devolver error
+      return { success: false, error: { message: 'Formato de producto no reconocido' } };
+      
     } catch (error: any) {
-      console.log('❌ Excepción en compra:', error);
       // Si hay cualquier error relacionado con "ya comprado", cerrar igual
       const errorMsg = (error?.message || '').toLowerCase();
       if (errorMsg.includes('already') || errorMsg.includes('suscrito') || errorMsg.includes('subscribed') || errorMsg.includes('purchased')) {
-        console.log('✅ Error de ya suscrito capturado - marcando para cerrar');
         shouldClose = true;
       }
       return { success: false, error };
     } finally {
       // SIEMPRE actualizar el estado y potencialmente cerrar el paywall
-      console.log('🔄 Actualizando estado Premium final...');
       await premium.updatePremiumState();
       
       // Esperar para asegurar que el estado se propague
@@ -216,51 +216,26 @@ export function useContextualPaywall() {
       
       // Verificar si debe cerrar
       if (shouldClose) {
-        console.log('✅ CERRANDO PAYWALL DEFINITIVAMENTE');
         hidePaywall();
       } else {
         // Verificar si hay suscripción activa de todas formas
         const customerInfo = premium.customerInfo;
-        const hasActiveSubscription = customerInfo?.entitlements?.active?.["pro"] != null;
+        const hasActiveSubscription = customerInfo?.transactionId != null;
         if (hasActiveSubscription) {
-          console.log('✅ Suscripción activa detectada en verificación final - CERRANDO');
           hidePaywall();
         }
       }
     }
   }, [premium, hidePaywall]);
 
-  const handleStartTrial = useCallback(async () => {
-    console.log('🎁 Iniciando trial desde paywall...');
-    const result = await premium.startTrial();
-    
-    if (result.success) {
-      console.log('✅ Trial iniciado exitosamente - cerrando paywall');
-      // Pequeño delay para que el usuario vea el feedback
-      setTimeout(() => {
-        hidePaywall();
-      }, 500);
-    } else {
-      console.log('❌ Error iniciando trial:', result.error);
-    }
-    
-    return result;
-  }, [premium, hidePaywall]);
-
   const handleRestore = useCallback(async () => {
-    console.log('🔄 Iniciando restauración AGRESIVA de compras...');
-    
     try {
       const result = await premium.restore();
-      console.log('🔄 Resultado de restauración:', result);
-      
       return result;
     } catch (error: any) {
-      console.log('❌ Error en restauración:', error);
       return { success: false, error };
     } finally {
       // SIEMPRE actualizar el estado Premium al final, sin importar el resultado
-      console.log('🔄 Actualizando estado Premium después de restaurar...');
       await premium.updatePremiumState();
       
       // Esperar más tiempo para asegurar que el estado se propague
@@ -274,26 +249,16 @@ export function useContextualPaywall() {
       
       // Verificar el customerInfo actual directamente
       const customerInfo = premium.customerInfo;
-      const hasActiveSubscription = customerInfo?.entitlements?.active?.["pro"] != null;
-      
-      console.log('🔍 Verificación FINAL después de restaurar:', {
-        hasActiveSubscription,
-        entitlements: Object.keys(customerInfo?.entitlements?.active || {}),
-        isPremium: premium.isPremium,
-      });
+      const hasActiveSubscription = customerInfo?.transactionId != null;
       
       // Si tiene suscripción activa, cerrar el paywall DEFINITIVAMENTE
       if (hasActiveSubscription || premium.isPremium) {
-        console.log('✅✅✅ SUSCRIPCIÓN ACTIVA CONFIRMADA - CERRANDO PAYWALL DEFINITIVAMENTE');
         hidePaywall();
-      } else {
-        console.log('ℹ️ No se encontró suscripción activa para restaurar - el paywall permanece abierto');
       }
     }
   }, [premium, hidePaywall]);
 
   const handleRetry = useCallback(async () => {
-    console.log('🔄 Reintentando cargar productos...');
     try {
       // Recargar ofertas y estado para obtener los productos nuevamente
       if ((premium as any).reloadOfferings) {
@@ -305,17 +270,47 @@ export function useContextualPaywall() {
     }
   }, [premium]);
 
+  const handleCompletePayment = useCallback(async (transactionId: string, product: any) => {
+    try {
+      // Completar el pago en usePremium
+      await premium.completePaymentFromWebView(transactionId, product);
+      
+      // Cerrar el paywall después de un breve delay
+      setTimeout(() => {
+        hidePaywall();
+      }, 1000);
+      
+    } catch (error: any) {
+      console.error('❌ Error completando pago desde WebView:', error);
+    }
+  }, [premium, hidePaywall]);
+
+  const handleCancelPayment = useCallback(() => {
+    try {
+      // Cancelar el pago en usePremium
+      premium.cancelPaymentFromWebView();
+      
+      // Cerrar el paywall
+      hidePaywall();
+      
+    } catch (error: any) {
+      console.error('❌ Error cancelando pago desde WebView:', error);
+    }
+  }, [premium, hidePaywall]);
+
   return {
     visible,
     context,
     showPaywall,
     hidePaywall,
     handleSubscribe,
-    handleStartTrial,
     handleRestore,
     handleRetry,
     loading: premium.loading,
     error: premium.error,
     packages: premium.packages,
+    pendingPayment: premium.pendingPayment,
+    onCompletePayment: handleCompletePayment,
+    onCancelPayment: handleCancelPayment,
   };
 }

@@ -4,12 +4,14 @@ import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { Button, LoadingSpinner, EmptyState, Input, PrestamoCard, LimitIndicator, PremiumBadge } from '../../components';
-import { SimplePaywall } from '../../components/paywall/SimplePaywall';
+import { ContextualPaywall } from '../../components/paywall';
+import { PayPalWebView } from '../../components/paywall/PayPalWebView';
 // Ads eliminados
 import { usePremium } from '../../hooks/usePremium';
 import { useContextualPaywall } from '../../hooks/useContextualPaywall';
 import { useConversionFlow } from '../../hooks/useConversionFlow';
 import { isFeatureAllowed } from '../../utils/featureGating';
+import { webViewService } from '../../services/webViewService';
 
 export function PrestamosScreen() {
   const navigation = useNavigation(); // Cast to any for navigation calls
@@ -26,6 +28,10 @@ export function PrestamosScreen() {
   } = useApp();
   const [searchText, setSearchText] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Estado para PayPal WebView
+  const [showPayPalWebView, setShowPayPalWebView] = useState(false);
+  const [webViewProps, setWebViewProps] = useState<any>(null);
 
   useEffect(() => {
     // Actualizar filtro cuando cambie el texto de búsqueda
@@ -130,6 +136,64 @@ export function PrestamosScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
+  // Funciones para manejar PayPal WebView
+  const handleWebViewSuccess = async (transactionId: string) => {
+    console.log('✅ Pago completado en WebView:', transactionId);
+    setShowPayPalWebView(false);
+    setWebViewProps(null);
+    
+    // Completar el pago pendiente
+    if (premium.pendingPayment) {
+      await premium.completePaymentFromWebView(transactionId, premium.pendingPayment.product);
+    }
+  };
+
+  const handleWebViewCancel = () => {
+    console.log('❌ Pago cancelado en WebView');
+    setShowPayPalWebView(false);
+    setWebViewProps(null);
+    
+    // Cancelar el pago pendiente
+    if (premium.pendingPayment) {
+      premium.cancelPaymentFromWebView();
+    }
+  };
+
+  const handleWebViewError = (error: string) => {
+    console.error('❌ Error en WebView:', error);
+    setShowPayPalWebView(false);
+    setWebViewProps(null);
+  };
+
+  // Efecto para escuchar eventos del servicio global de WebView
+  useEffect(() => {
+    const handleShowWebView = (data: any) => {
+      console.log('🌐 PrestamosScreen: Recibido evento showWebView:', data);
+      setWebViewProps({
+        approvalUrl: data.approvalUrl,
+        orderId: data.orderId,
+        product: data.product
+      });
+      setShowPayPalWebView(true);
+    };
+
+    const handleHideWebView = () => {
+      console.log('🌐 PrestamosScreen: Recibido evento hideWebView');
+      setShowPayPalWebView(false);
+      setWebViewProps(null);
+    };
+
+    // Suscribirse a los eventos del servicio global
+    const cleanupShow = webViewService.onShowWebView(handleShowWebView);
+    const cleanupHide = webViewService.onHideWebView(handleHideWebView);
+
+    // Cleanup
+    return () => {
+      cleanupShow();
+      cleanupHide();
+    };
+  }, []);
+
   if (state.isLoading) {
     return <LoadingSpinner text="Cargando préstamos..." />;
   }
@@ -214,18 +278,43 @@ export function PrestamosScreen() {
         }
       />
       
-      {/* Paywall Simple */}
-      <SimplePaywall
+      {/* Paywall Contextual */}
+      <ContextualPaywall
         visible={contextualPaywall.visible}
         onClose={contextualPaywall.hidePaywall}
+        packages={contextualPaywall.packages}
+        loading={contextualPaywall.loading}
+        error={contextualPaywall.error || undefined}
         onSelect={contextualPaywall.handleSubscribe}
-        onStartTrial={contextualPaywall.handleStartTrial}
-        context={{
-          currentUsage: contextualPaywall.context?.currentUsage || state.prestamos.filter(p => p.estado === 'activo').length,
-          limit: contextualPaywall.context?.limit || 10,
-          featureName: contextualPaywall.context?.featureName || 'Préstamos Activos',
+        onRestore={contextualPaywall.handleRestore}
+        onRetry={contextualPaywall.handleRetry}
+        context={contextualPaywall.context || {
+          title: 'Préstamos ilimitados son Premium',
+          message: 'Desbloquea la capacidad de crear préstamos ilimitados',
+          icon: '💰',
+          featureName: 'Préstamos Ilimitados',
+          currentUsage: 0,
+          limit: 3,
         }}
+        pendingPayment={contextualPaywall.pendingPayment}
+        onCompletePayment={contextualPaywall.onCompletePayment}
+        onCancelPayment={contextualPaywall.onCancelPayment}
       />
+
+      {/* PayPal WebView */}
+      {showPayPalWebView && webViewProps && (
+        <PayPalWebView
+          visible={showPayPalWebView}
+          onClose={() => {
+            setShowPayPalWebView(false);
+            setWebViewProps(null);
+          }}
+          onSuccess={handleWebViewSuccess}
+          onError={handleWebViewError}
+          product={webViewProps.product}
+          approvalUrl={webViewProps.approvalUrl}
+        />
+      )}
       
       {/* Espacio inferior para safe area */}
     </View>
